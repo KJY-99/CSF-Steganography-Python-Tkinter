@@ -1,8 +1,7 @@
 # Hi all this is a demonstration for the drag and drop function. You can run this file separately to take a look at how it functions.
 
 import tkinter as tk
-from TkinterDnD2 import DND_FILES, TkinterDnD
-
+from tkinterdnd2 import DND_FILES, TkinterDnD
 # METHOD 1: GET FILEPATH METHOD (Cannot have spaces in the filename)
 # This method requires a listbox to function. User drags their desired file to the listbox and it will get the filepath.
 # You can then get the file from the exact filepath, perform your encoding/decoding and display image/video.
@@ -13,8 +12,11 @@ def drop_inside_listbox(event):
 # This method requires a texbox to function. User drags their desired file to the listbox and it will read the file to text, printing it in the textbox.
 def drop_inside_textbox(event):
     tbox.delete("1.0", "end")
-    if event.data.endswith(".txt"):
-        with open(event.data, "r") as file:
+    eventtest = event.data
+    eventtest = eventtest.strip("}{")
+    print(eventtest)
+    if eventtest.endswith(".txt"):
+        with open(eventtest, "r") as file:
             for line in file:
                 line = line.strip()
                 tbox.insert("end", f"{line}\n")

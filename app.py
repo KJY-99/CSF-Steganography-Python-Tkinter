@@ -1,7 +1,7 @@
 import customtkinter
 import tkinter as tk
 import os
-from TkinterDnD2 import DND_FILES, TkinterDnD
+from tkinterdnd2 import DND_FILES, TkinterDnD
 from PIL import Image
 
 # Allow for TkDnD to utilise CTK
