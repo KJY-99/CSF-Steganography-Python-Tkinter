@@ -1,8 +1,10 @@
 import customtkinter
 import tkinter as tk
+import cv2
 import os
 from tkinterdnd2 import DND_FILES, TkinterDnD
-from PIL import Image
+from PIL import Image, ImageTk
+
 
 # Allow for TkDnD to utilise CTK
 class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
@@ -15,7 +17,9 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         # Drag and Drop Method - Listbox: Get filepath to listbox (IMPT: Omit spaces in filename)
         def drop_inside_listbox(event):
             self.listb.insert("end", event.data)
-            
+            file_path = event.data
+            display_image(file_path)
+
         # Drag and Drop Method - Textbox: Strip text from file (IMPT: Omit spaces in filename)
         def drop_inside_textbox(event):
             self.tbox.delete("1.0", "end")
@@ -24,6 +28,15 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
                     for line in file:
                         line = line.strip()
                         self.tbox.insert("end", f"{line}\n")
+
+        # Function to display image in label
+        def display_image(file_path):
+            img = cv2.imread(file_path)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(img)
+            img = ImageTk.PhotoImage(img)
+            self.image_label.configure(image=img)
+            self.image_label.image = img
 
         # Define Title, Window size and Grid layout
         self.title("CSF Steganography Group --")
@@ -35,41 +48,59 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         # Load example images
         image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "images")
         self.logo_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "icon.png")), size=(26, 26))
-        self.large_test_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "large_test_image.png")), size=(500, 150))
-        self.image_icon_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "image_icon_light.png")), size=(20, 20))
+        self.large_test_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "large_test_image.png")),
+                                                       size=(500, 150))
+        self.image_icon_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "image_icon_light.png")),
+                                                       size=(20, 20))
 
         # Navigation icons
-        self.home_image = customtkinter.CTkImage(dark_image=Image.open(os.path.join(image_path, "home_light.png")), size=(20, 20))
-        self.chat_image = customtkinter.CTkImage(dark_image=Image.open(os.path.join(image_path, "chat_light.png")), size=(20, 20))
-        self.add_user_image = customtkinter.CTkImage(dark_image=Image.open(os.path.join(image_path, "add_user_light.png")), size=(20, 20))
+        self.home_image = customtkinter.CTkImage(dark_image=Image.open(os.path.join(image_path, "home_light.png")),
+                                                 size=(20, 20))
+        self.chat_image = customtkinter.CTkImage(dark_image=Image.open(os.path.join(image_path, "chat_light.png")),
+                                                 size=(20, 20))
+        self.add_user_image = customtkinter.CTkImage(
+            dark_image=Image.open(os.path.join(image_path, "add_user_light.png")), size=(20, 20))
 
         # Side Navigation (ALL SCREENS)
         self.navigation_frame = customtkinter.CTkFrame(self, corner_radius=0)
         self.navigation_frame.grid(row=0, column=0, sticky="nsew")
         self.navigation_frame.grid_rowconfigure(5, weight=1)
 
-        self.navigation_frame_label = customtkinter.CTkLabel(self.navigation_frame, text="  Steganography", image=self.logo_image,
-                                                             compound="left", font=customtkinter.CTkFont(size=15, weight="bold"))
+        self.navigation_frame_label = customtkinter.CTkLabel(self.navigation_frame, text="  Steganography",
+                                                             image=self.logo_image,
+                                                             compound="left",
+                                                             font=customtkinter.CTkFont(size=15, weight="bold"))
         self.navigation_frame_label.grid(row=0, column=0, padx=20, pady=20)
 
-        self.home_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Home",
-                                                   fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
+        self.home_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10,
+                                                   text="Home",
+                                                   fg_color="transparent", text_color=("gray10", "gray90"),
+                                                   hover_color=("gray70", "gray30"),
                                                    image=self.home_image, anchor="w", command=self.home_button_event)
         self.home_button.grid(row=1, column=0, sticky="ew")
 
-        self.image_screen_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Image",
-                                                      fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
-                                                      image=self.chat_image, anchor="w", command=self.image_screen_button_event)
+        self.image_screen_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40,
+                                                           border_spacing=10, text="Image",
+                                                           fg_color="transparent", text_color=("gray10", "gray90"),
+                                                           hover_color=("gray70", "gray30"),
+                                                           image=self.chat_image, anchor="w",
+                                                           command=self.image_screen_button_event)
         self.image_screen_button.grid(row=2, column=0, sticky="ew")
 
-        self.video_screen_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Video",
-                                                      fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
-                                                      image=self.add_user_image, anchor="w", command=self.video_screen_button_event)
+        self.video_screen_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40,
+                                                           border_spacing=10, text="Video",
+                                                           fg_color="transparent", text_color=("gray10", "gray90"),
+                                                           hover_color=("gray70", "gray30"),
+                                                           image=self.add_user_image, anchor="w",
+                                                           command=self.video_screen_button_event)
         self.video_screen_button.grid(row=3, column=0, sticky="ew")
 
-        self.audio_screen_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10, text="Audio",
-                                                      fg_color="transparent", text_color=("gray10", "gray90"), hover_color=("gray70", "gray30"),
-                                                      image=self.add_user_image, anchor="w", command=self.audio_screen_button_event)
+        self.audio_screen_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40,
+                                                           border_spacing=10, text="Audio",
+                                                           fg_color="transparent", text_color=("gray10", "gray90"),
+                                                           hover_color=("gray70", "gray30"),
+                                                           image=self.add_user_image, anchor="w",
+                                                           command=self.audio_screen_button_event)
         self.audio_screen_button.grid(row=4, column=0, sticky="ew")
 
         # DASHBOARD SCREEN
@@ -77,32 +108,43 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.home_frame.grid_columnconfigure(0, weight=1)
 
         # Image Example
-        self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_frame, text="", image=self.large_test_image)
+        self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_frame, text="",
+                                                                   image=self.large_test_image)
         self.home_frame_large_image_label.grid(row=0, column=0, padx=20, pady=10)
 
         # Buttons 1 - 4 Example
         self.home_frame_button_1 = customtkinter.CTkButton(self.home_frame, text="", image=self.image_icon_image)
         self.home_frame_button_1.grid(row=1, column=0, padx=20, pady=10)
-        self.home_frame_button_2 = customtkinter.CTkButton(self.home_frame, text="CTkButton", image=self.image_icon_image, compound="right")
+        self.home_frame_button_2 = customtkinter.CTkButton(self.home_frame, text="CTkButton",
+                                                           image=self.image_icon_image, compound="right")
         self.home_frame_button_2.grid(row=2, column=0, padx=20, pady=10)
-        self.home_frame_button_3 = customtkinter.CTkButton(self.home_frame, text="CTkButton", image=self.image_icon_image, compound="top")
+        self.home_frame_button_3 = customtkinter.CTkButton(self.home_frame, text="CTkButton",
+                                                           image=self.image_icon_image, compound="top")
         self.home_frame_button_3.grid(row=3, column=0, padx=20, pady=10)
-        self.home_frame_button_4 = customtkinter.CTkButton(self.home_frame, text="CTkButton", image=self.image_icon_image, compound="bottom", anchor="w")
+        self.home_frame_button_4 = customtkinter.CTkButton(self.home_frame, text="CTkButton",
+                                                           image=self.image_icon_image, compound="bottom", anchor="w")
         self.home_frame_button_4.grid(row=4, column=0, padx=20, pady=10)
 
         # IMAGE SCREEN (ERNEST & JY)
         self.image_screen = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
         self.image_screen.grid_columnconfigure(0, weight=1)
 
+        # list box to drag and drop file path
         self.listb = tk.Listbox(self.image_screen, selectmode=tk.SINGLE, background="#ffe0d6")
-        self.listb.grid(row=0, column=0, padx=20, pady=10)
+        self.listb.grid(row=0, column=0, padx=20, pady=10, sticky="nsew")
         self.listb.drop_target_register(DND_FILES)
         self.listb.dnd_bind("<<Drop>>", drop_inside_listbox)
 
+        # Textbox
         self.tbox = tk.Text(self.image_screen)
-        self.tbox.grid(row=1, column=0, padx=20, pady=10)
+        self.tbox.grid(row=1, column=0, padx=20, pady=10, sticky="nsew")
         self.tbox.drop_target_register(DND_FILES)
         self.tbox.dnd_bind("<<Drop>>", drop_inside_textbox)
+
+        # Label for displaying the dropped image
+        self.image_label = customtkinter.CTkLabel(self.image_screen, text="", image=None)
+        self.image_label.grid(row=2, column=0, padx=20, pady=10, sticky="nsew")
+
 
         # VIDEO SCREEN (INSERT YOUR UI ELEMENTS HERE) [ALVIS & DANIEL]
         self.video_screen = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
@@ -149,6 +191,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
     def audio_screen_button_event(self):
         self.select_frame_by_name("audio_screen")
+
 
 # Run Application
 if __name__ == "__main__":

@@ -52,7 +52,7 @@ def to_bin(self, data):
     else:
         raise TypeError("Type not supported.")
 
-def encode(self, image_name, secret_data):
+def piencode(self, image_name, secret_data):
     # Read the image
     image = cv2.imread(image_name)
 
@@ -114,3 +114,36 @@ def encode(self, image_name, secret_data):
                 break
 
     return encoded_image
+
+def decode(image_name):
+        print("[+] Decoding...")
+        # read the image
+        image = cv2.imread(image_name)
+        binary_data = ""
+        for row in image:
+            for pixel in row:
+                r, g, b = to_bin(pixel)
+                binary_data += r[-1]
+                binary_data += g[-1]
+                binary_data += b[-1]
+        # split by 8-bits
+        all_bytes = [ binary_data[i: i+8] for i in range(0, len(binary_data), 8) ]
+        # convert from bits to characters
+        decoded_data = ""
+        for byte in all_bytes:
+            decoded_data += chr(int(byte, 2))
+            if decoded_data[-5:] == "=====": # we keep decoding until we see the stopping criteria.
+                break
+        return decoded_data[:-5]
+
+if __name__ == "__main__":
+    input_image = "pokemon.PNG"
+    output_image = "stego_pokemon.PNG"
+    secret_data = "This is a top secret message."
+    # encode the data into the image
+    encoded_image = encode(image_name=input_image, secret_data=secret_data)
+    # save the output image (encoded image)
+    cv2.imwrite(output_image, encoded_image)
+    # decode the secret data from the image
+    decoded_data = decode(output_image)
+    print("[+] Decoded data:", decoded_data)
