@@ -214,26 +214,24 @@ def decode (image_name) :
     # read the image
     image = cv2.imread(image_name)
     binary_data = ""
+    decoded_data = ""
     for row in image:
         for pixel in row:
+            if len(binary_data) >= 8:
+                decoded_data += chr (int(binary_data[0:8], 2))
+                binary_data = binary_data[8:]
+            if decoded_data[-5:] == "=====":
+                break
             r, g, b = to_bin (pixel)
             binary_data += r[-1]
             binary_data += g[-1]
             binary_data += b[-1]
-    # split by 8-bits
-    all_bytes = [ binary_data[i: i+8] for i in range(0, len (binary_data), 8) ]
-    # convert from bits to characters
-    decoded_data = ""
-    for byte in all_bytes:
-        decoded_data += chr (int(byte, 2))
-        if decoded_data[-5:] == "=====":
-            break
     return decoded_data[:-5]
 
 
 video_path = "D:\\Downloads\\video.mp4"
 encoded_video_path ="D:\\Documents\\Sem 3\\INF2005\\Project\\CSF-Steganography-Python-Tkinter\\output_video.avi"
-secret = "test text"
+secret = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi consectetur aliquet nibh. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Curabitur ultrices porta risus vitae mollis. Donec posuere maximus volutpat. Praesent vestibulum ipsum vel mi interdum, nec semper mauris vulputate. Phasellus efficitur ac est faucibus viverra. Cras id dapibus augue, non accumsan diam. Suspendisse ac orci interdum, porttitor mi a, malesuada nisl. Pellentesque iaculis consectetur elit, eu iaculis lectus efficitur a. Suspendisse finibus, nibh vel varius hendrerit, ex justo fringilla dui, in egestas tortor nulla vitae erat. Aliquam erat volutpat. Quisque bibendum, ante et ultricies viverra, lorem neque aliquet ex, sit amet rhoncus mi massa ac justo. Nulla euismod, magna vel vehicula viverra, urna diam tincidunt sem, at laoreet orci nunc a nisl."
 # video encryption
 video_split(video_path,"frameholder")
 extract_audio(video_path,"audioholder")
