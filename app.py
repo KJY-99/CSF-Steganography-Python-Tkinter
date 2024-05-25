@@ -29,6 +29,9 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
                         line = line.strip()
                         self.tbox.insert("end", f"{line}\n")
 
+        def slider_event(value):
+            self.slider_label.configure(text="Selected number of bits: "+str(int(value)))
+
         # Function to display image in label
         def display_image(file_path):
             img = cv2.imread(file_path)
@@ -136,9 +139,16 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.listb.drop_target_register(DND_FILES)
         self.listb.dnd_bind("<<Drop>>", drop_inside_listbox)
 
+        # Bit Selection Slider
+        bit_value = tk.IntVar()
+        self.slider_label = customtkinter.CTkLabel(self.image_screen, text="Selected number of bits: 1")
+        self.slider_label.grid(row=2, column=0)
+        self.bit_slider = customtkinter.CTkSlider(self.image_screen, from_=1, to=8, number_of_steps=7, command=slider_event, variable=bit_value)
+        self.bit_slider.grid(row=2, column=1, padx=15, pady=10, sticky="ew")
+
         # Label for displaying the dropped image
         self.image_label = customtkinter.CTkLabel(self.image_screen, text="", image=None)
-        self.image_label.grid(row=2, column=1, padx=10, pady=10)
+        self.image_label.grid(row=3, column=1, padx=10, pady=10)
 
         # VIDEO SCREEN (INSERT YOUR UI ELEMENTS HERE) [ALVIS & DANIEL]
         self.video_screen = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
