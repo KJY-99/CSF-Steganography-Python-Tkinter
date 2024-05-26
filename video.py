@@ -4,51 +4,39 @@ from moviepy.editor import VideoFileClip, AudioFileClip
 import os
 import shutil
 
-def video_split(video_path,frame_dir):
-    # Folder creation
-    # If it exists, delete it
+def video_split(video_path):
+    frame_dir = "frameholder"
     if os.path.exists(frame_dir):
         shutil.rmtree(frame_dir)
-
-    # Creates the folder
     os.makedirs(frame_dir, exist_ok=True)
-
-    # Opens the video
     vidcap = cv2.VideoCapture(video_path)
     if not vidcap.isOpened():
         print("Error: Could not open video.")
         return
-
-    # splits the frame of video
     count=0
     while True:
         success, image = vidcap.read()
         if not success:
             break
-        cv2.imwrite(os.path.join(frame_dir, "{:d}.png".format(count)), image)
+        cv2.imwrite((frame_dir + "\\{:d}.png".format(count)), image)
         count += 1
     vidcap.release()
     print("Video has been split in frames.")
 
 
-def extract_audio(video_path,audio_dir):
-    # Load the video
-    video = VideoFileClip(video_path)
-    
-    # Extract the audio
-    audio = video.audio
-    
-    # If it exists, delete it
+def extract_audio(video_path):
+    audio_dir = "audioholder"
     if os.path.exists(audio_dir):
         shutil.rmtree(audio_dir)
-
-    # Creates the folder
     os.makedirs(audio_dir, exist_ok=True)
-
-    # Write the audio to file
+    video = VideoFileClip(video_path)
+    audio = video.audio
+    if audio == None:
+        print("Video has no audio")
+        return
     audio.write_audiofile(audio_dir +"\\audio.wav")
 
-def frame_encode(frame_list,secret):
+def frame_encode(frame_list,secret,bit_length):
     secret = secret +"-----"
     segment_length = len(secret) // len(frame_list)
     remainder = len(secret) % len(frame_list)
@@ -57,65 +45,51 @@ def frame_encode(frame_list,secret):
     message_segments = message_segments[1:]
     split_parts = [secret[start:end] for start, end in zip([0] + message_segments, message_segments)]
     for i in range(0,len(frame_list)):
-        encode_message(split_parts[i],frame_list[i],frame_list[i])
+        encode_message(split_parts[i],frame_list[i],frame_list[i],bit_length)
     print("Encoded video frames saved successfully.")
     
 
-def frames_to_video(video_path,secret):
-    # Get the list of frame files
+def frames_to_video(video_path,secret,bit_length):
     frames= [f for f in os.listdir("frameholder") if f.endswith('.png')]
     frames= sorted(frames, key=lambda x: int(x.split('.')[0]))
     frames= [os.path.join("frameholder", f) for f in frames]
-    frame_encode(frames,secret)
-    # Read the first frame to get the width and height
+    frame_encode(frames,secret,bit_length)
     frame = cv2.imread(frames[0])
     height, width, layers = frame.shape
-
-    # Initialize the video writer
     fourcc = cv2.VideoWriter_fourcc(*'FFV1')
-
-    # Folder creation
     video_dir = "videoholder"
-    # If it exists, delete it
     if os.path.exists(video_dir):
         shutil.rmtree(video_dir)
-    # Creates the folder
     os.makedirs(video_dir, exist_ok=True)
-    # Opens the video
     vidcap = cv2.VideoCapture(video_path)
     if not vidcap.isOpened():
         print("Error: Could not open video.")
         return
     fps = vidcap.get(cv2.CAP_PROP_FPS)
     vidcap.release()
-
     video = cv2.VideoWriter(video_dir +"\\noaudio.avi", fourcc, fps, (width, height))
-
-    # Write each frame to the video
     for frame in frames:
         img = cv2.imread(frame)
         video.write(img)
-
-    # Release the video writer
     video.release()
 
 def add_audio_to_video():
-    # Load the video clip
-    video_clip = VideoFileClip("videoholder\\noaudio.avi")
-    
-    # Load the audio clip
-    audio_clip = AudioFileClip("audioholder\\audio.wav")
-    
-    # Set the audio of the video clip
-    video_with_audio = video_clip.set_audio(audio_clip)
-    
-    # Write the final video file
-    video_with_audio.write_videofile("output_video.avi", codec='ffv1', audio_codec='aac')
+    try :
+        audio_clip = AudioFileClip("audioholder\\audio.wav")
+        video_clip = video_clip.set_audio(audio_clip)
+        audio_clip.close()
+    except:
+        print("No Audiofile detected")
+        return
+    finally:
+        video_clip = VideoFileClip("videoholder\\noaudio.avi")
+        video_clip.write_videofile("output_video.avi", codec='ffv1', audio_codec='aac')
+        video_clip.close()
 
-def encode_message(secret_message,image_path,output_file_path):
+def encode_message(secret_message,image_path,output_file_path,bit_length):
     # Encode the secret message into the image
     try:
-        encoded_image = encode(image_path, secret_message)
+        encoded_image = encode(image_path, secret_message,bit_length)
     except Exception as e:
         print("Error:", e)
         return
@@ -132,87 +106,59 @@ def to_bin(data):
     else:
         raise TypeError("Type not supported.")
 
-def encode(image_name, secret_data):
-    # Read the image
+def encode(image_name, secret_data, bit_length):
+    # Read image
     image = cv2.imread(image_name)
-
-    # Make a copy of the image to preserve the original
-    encoded_image = np.copy(image)
-
-    # Calculate the maximum bytes to encode
-    n_bytes = encoded_image.shape[0] * encoded_image.shape[1] * 3 // 8
-    #print("[*] Maximum bytes to encode:", n_bytes)
-
-    # Add stopping criteria to the secret data
+    # Height * Width * RGB (bytes)
+    n_bytes = image.shape[0] * image.shape[1] * 3 // 8
+    # Stopping criteria
     secret_data += "====="
-
-    # Check if the secret data fits within the image
+    # Check image data feasibility
     if len(secret_data) > n_bytes:
-        raise ValueError("[!] Insufficient bytes, need a bigger image or less data.")
-
-    #print("[*] Encoding data...")
-
-    # Convert secret data to binary
-    binary_secret_data = to_bin(secret_data)
-
-    # Get the size of data to hide
-    data_len = len(binary_secret_data)
-
-    # Index to keep track of the current data position
+        raise ValueError("Need larger image or less data.")
     data_index = 0
-
-    # Iterate through each pixel in the image
-    for row in range(encoded_image.shape[0]):
-        for col in range(encoded_image.shape[1]):
-            # Get the pixel value (RGB)
-            r, g, b = encoded_image[row, col]
-            # Convert RGB values to binary format
-            r_bin = to_bin(r)
-            g_bin = to_bin(g)
-            b_bin = to_bin(b)
-            # Modify the least significant bit only if there is still data to store
+    # Converts text data to binary
+    binary_secret_data = to_bin(secret_data)
+    data_len = len(binary_secret_data)
+    for row in image:
+        for pixel in row:
+            # Convert pixel to binary
+            r, g, b = to_bin(pixel)
+            # Index last x elements of the pixel, append indexed secret data
             if data_index < data_len:
-                r_bin = r_bin[:-1] + binary_secret_data[data_index]
-                data_index += 1
+                pixel[0] = int(r[:-bit_length] + binary_secret_data[data_index:data_index + bit_length], 2)
+                data_index += bit_length
             if data_index < data_len:
-                g_bin = g_bin[:-1] + binary_secret_data[data_index]
-                data_index += 1
+                pixel[1] = int(g[:-bit_length] + binary_secret_data[data_index:data_index + bit_length], 2)
+                data_index += bit_length
             if data_index < data_len:
-                b_bin = b_bin[:-1] + binary_secret_data[data_index]
-                data_index += 1
-
-            # Convert modified binary values back to decimal
-            r = int(r_bin, 2)
-            g = int(g_bin, 2)
-            b = int(b_bin, 2)
-
-            # Update the pixel value in the encoded image
-            encoded_image[row, col] = [r, g, b]
-
-            # Break out of the loop if data is encoded
+                pixel[2] = int(b[:-bit_length] + binary_secret_data[data_index:data_index + bit_length], 2)
+                data_index += bit_length
+            # Exit once all data is encoded
             if data_index >= data_len:
                 break
+        if data_index >= data_len:
+            break
+    return image
 
-    return encoded_image
-
-def frame_decode():
+def frame_decode(bit_length):
     print("Start decoding")
     message = ""
-    frames= [f for f in os.listdir("encodedframeholder") if f.endswith('.png')]
+    frames= [f for f in os.listdir("frameholder") if f.endswith('.png')]
     frames= sorted(frames, key=lambda x: int(x.split('.')[0]))
-    frames= [os.path.join("encodedframeholder", f) for f in frames]
+    frames= [os.path.join("frameholder", f) for f in frames]
     for f in frames:
-        print(message)
-        message += decode(f)
+        message += decode(f,bit_length)
         if message[-5:] == "-----":
             break
     print("Secret message retrieved.")
     return message[:-5]
 
-def decode (image_name) :
-    #print("[+] Decoding...")
-    # read the image
+def decode(image_name, bit_length):
+    # Read image
     image = cv2.imread(image_name)
+    if image is None:
+        raise ValueError("Image not found.")
     binary_data = ""
     decoded_data = ""
     for row in image:
@@ -222,21 +168,41 @@ def decode (image_name) :
                 binary_data = binary_data[8:]
             if decoded_data[-5:] == "=====":
                 break
-            r, g, b = to_bin (pixel)
-            binary_data += r[-1]
-            binary_data += g[-1]
-            binary_data += b[-1]
+            r, g, b = to_bin(pixel)
+            # Index last x elements (Bit length)
+            binary_data += r[-bit_length:]
+            binary_data += g[-bit_length:]
+            binary_data += b[-bit_length:]
     return decoded_data[:-5]
 
+def cleandir():
+        # If it exists, delete it
+    if os.path.exists("audioholder"):
+        shutil.rmtree("audioholder")
+    if os.path.exists("frameholder"):
+        shutil.rmtree("frameholder")
+    if os.path.exists("encodedframeholder"):
+        shutil.rmtree("encodedframeholder")
+    if os.path.exists("videoholder"):
+        shutil.rmtree("videoholder")
 
-video_path = "D:\\Downloads\\video.mp4"
-encoded_video_path ="D:\\Documents\\Sem 3\\INF2005\\Project\\CSF-Steganography-Python-Tkinter\\output_video.avi"
+video_path = "D:\\Downloads\\noaudio.avi"
+encoded_video_path ="output_video.avi"
+bit_length = 2
 secret = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi consectetur aliquet nibh. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Curabitur ultrices porta risus vitae mollis. Donec posuere maximus volutpat. Praesent vestibulum ipsum vel mi interdum, nec semper mauris vulputate. Phasellus efficitur ac est faucibus viverra. Cras id dapibus augue, non accumsan diam. Suspendisse ac orci interdum, porttitor mi a, malesuada nisl. Pellentesque iaculis consectetur elit, eu iaculis lectus efficitur a. Suspendisse finibus, nibh vel varius hendrerit, ex justo fringilla dui, in egestas tortor nulla vitae erat. Aliquam erat volutpat. Quisque bibendum, ante et ultricies viverra, lorem neque aliquet ex, sit amet rhoncus mi massa ac justo. Nulla euismod, magna vel vehicula viverra, urna diam tincidunt sem, at laoreet orci nunc a nisl."
 # video encryption
-video_split(video_path,"frameholder")
-extract_audio(video_path,"audioholder")
-frames_to_video(video_path,secret)
-add_audio_to_video()
+def video_encryption(video_path,secret,bit_length):
+    video_split(video_path)
+    extract_audio(video_path)
+    frames_to_video(video_path,secret,bit_length)
+    add_audio_to_video()
+    cleandir()
 # video decryption
-video_split(encoded_video_path,"encodedframeholder")
-frame_decode()
+def video_decryption(encoded_video_path,bit_length):
+    video_split(encoded_video_path)
+    print(frame_decode(bit_length))
+    cleandir()
+cleandir()
+video_encryption(video_path,secret,bit_length)
+video_decryption(encoded_video_path,bit_length)
+
