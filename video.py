@@ -35,9 +35,11 @@ def extract_audio(video_path):
         print("Video has no audio")
         return
     audio.write_audiofile(audio_dir +"\\audio.wav")
+    video.close()
+    audio.close()
 
 def frame_encode(frame_list,secret,bit_length):
-    secret = secret +"-----"
+    secret += "-----"
     segment_length = len(secret) // len(frame_list)
     remainder = len(secret) % len(frame_list)
     message_segments = [segment_length * i + min(i, remainder) for i in range(len(frame_list))]
@@ -75,16 +77,14 @@ def frames_to_video(video_path,secret,bit_length):
 
 def add_audio_to_video():
     try :
+        video_clip = VideoFileClip("videoholder\\noaudio.avi")
         audio_clip = AudioFileClip("audioholder\\audio.wav")
         video_clip = video_clip.set_audio(audio_clip)
-        audio_clip.close()
-    except:
-        print("No Audiofile detected")
-        return
+    except Exception as e:
+        print("Error:", e)
     finally:
-        video_clip = VideoFileClip("videoholder\\noaudio.avi")
         video_clip.write_videofile("output_video.avi", codec='ffv1', audio_codec='aac')
-        video_clip.close()
+    
 
 def encode_message(secret_message,image_path,output_file_path,bit_length):
     # Encode the secret message into the image
@@ -150,9 +150,9 @@ def frame_decode(bit_length):
     for f in frames:
         message += decode(f,bit_length)
         if message[-5:] == "-----":
-            break
-    print("Secret message retrieved.")
-    return message[:-5]
+            print("Secret message retrieved.")
+            return message[:-5]
+    return message
 
 def decode(image_name, bit_length):
     # Read image
@@ -167,13 +167,13 @@ def decode(image_name, bit_length):
                 decoded_data += chr (int(binary_data[0:8], 2))
                 binary_data = binary_data[8:]
             if decoded_data[-5:] == "=====":
-                break
+                return decoded_data[:-5]
             r, g, b = to_bin(pixel)
             # Index last x elements (Bit length)
             binary_data += r[-bit_length:]
             binary_data += g[-bit_length:]
             binary_data += b[-bit_length:]
-    return decoded_data[:-5]
+    return decoded_data
 
 def cleandir():
         # If it exists, delete it
@@ -186,10 +186,6 @@ def cleandir():
     if os.path.exists("videoholder"):
         shutil.rmtree("videoholder")
 
-video_path = "D:\\Downloads\\noaudio.avi"
-encoded_video_path ="output_video.avi"
-bit_length = 2
-secret = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi consectetur aliquet nibh. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Curabitur ultrices porta risus vitae mollis. Donec posuere maximus volutpat. Praesent vestibulum ipsum vel mi interdum, nec semper mauris vulputate. Phasellus efficitur ac est faucibus viverra. Cras id dapibus augue, non accumsan diam. Suspendisse ac orci interdum, porttitor mi a, malesuada nisl. Pellentesque iaculis consectetur elit, eu iaculis lectus efficitur a. Suspendisse finibus, nibh vel varius hendrerit, ex justo fringilla dui, in egestas tortor nulla vitae erat. Aliquam erat volutpat. Quisque bibendum, ante et ultricies viverra, lorem neque aliquet ex, sit amet rhoncus mi massa ac justo. Nulla euismod, magna vel vehicula viverra, urna diam tincidunt sem, at laoreet orci nunc a nisl."
 # video encryption
 def video_encryption(video_path,secret,bit_length):
     video_split(video_path)
@@ -200,9 +196,38 @@ def video_encryption(video_path,secret,bit_length):
 # video decryption
 def video_decryption(encoded_video_path,bit_length):
     video_split(encoded_video_path)
-    print(frame_decode(bit_length))
-    cleandir()
-cleandir()
-video_encryption(video_path,secret,bit_length)
-video_decryption(encoded_video_path,bit_length)
+    return(frame_decode(bit_length))
 
+def image_to_binary(image_path):
+    image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+    success, encoded_image = cv2.imencode('.png', image)
+    if not success:
+        raise ValueError("Image encoding failed")
+    binary_data = encoded_image.tobytes()
+    binary_string = ''.join(format(byte, '08b') for byte in binary_data)
+    decoded_data = ""
+    all_bytes = [ binary_string[i: i+8] for i in range(0, len (binary_string), 8) ]
+    for byte in all_bytes:
+        decoded_data += chr (int(byte, 2))
+    return decoded_data
+
+def binary_to_image(binary_data, output_path):
+    binary_string = to_bin(binary_data)
+    binary_data = bytes(int(binary_string[i:i+8], 2) for i in range(0, len(binary_string), 8))
+    nparr = np.frombuffer(binary_data, np.uint8)
+    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError("Image decoding failed")
+    cv2.imwrite(output_path, image)
+
+video_path = "noaudio.avi"
+encoded_video_path ="output_video.avi"
+bit_length = 2
+input_image_path = "test.png"
+secret = image_to_binary(input_image_path)
+output_image_path = "hidden.png"
+
+video_encryption(video_path,secret,bit_length)
+secret_encoded =video_decryption(encoded_video_path,bit_length)
+binary_to_image(secret_encoded,output_image_path)
+cleandir()
