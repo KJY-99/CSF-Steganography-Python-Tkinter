@@ -74,13 +74,14 @@ def decode(image_name, bit_length):
                 decoded_data += chr (int(binary_data[0:8], 2))
                 binary_data = binary_data[8:]
             if decoded_data[-5:] == "=====":
-                break
+                return decoded_data[:-5]
             r, g, b = to_bin(pixel)
             # Index last x elements (Bit length)
             binary_data += r[-bit_length:]
             binary_data += g[-bit_length:]
             binary_data += b[-bit_length:]
-    return decoded_data[:-5]
+    return decoded_data
+
 input_image = "test.png"
 output_image = "output.png"
 secret_data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi consectetur aliquet nibh. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Curabitur ultrices porta risus vitae mollis. Donec posuere maximus volutpat. Praesent vestibulum ipsum vel mi interdum, nec semper mauris vulputate. Phasellus efficitur ac est faucibus viverra. Cras id dapibus augue, non accumsan diam. Suspendisse ac orci interdum, porttitor mi a, malesuada nisl. Pellentesque iaculis consectetur elit, eu iaculis lectus efficitur a. Suspendisse finibus, nibh vel varius hendrerit, ex justo fringilla dui, in egestas tortor nulla vitae erat. Aliquam erat volutpat. Quisque bibendum, ante et ultricies viverra, lorem neque aliquet ex, sit amet rhoncus mi massa ac justo. Nulla euismod, magna vel vehicula viverra, urna diam tincidunt sem, at laoreet orci nunc a nisl."
