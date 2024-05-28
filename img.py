@@ -30,9 +30,9 @@ def encode(image_name, secret_data, bit_length):
     # Read image
     image = cv2.imread(image_name)
     # Height * Width * RGB (bytes)
-    n_bytes = image.shape[0] * image.shape[1] * 3 // 8
+    n_bytes = image.shape[0] * image.shape[1] * 3 // 8 * bit_length
     # Stopping criteria
-    secret_data += "====="
+    secret_data += "===== "
     # Check image data feasibility
     if len(secret_data) > n_bytes:
         raise ValueError("Need larger image or less data.")
@@ -82,13 +82,13 @@ def decode(image_name, bit_length):
             binary_data += b[-bit_length:]
     return decoded_data
 
-input_image = "test.png"
+input_image = "test2.png"
 output_image = "output.png"
-secret_data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi consectetur aliquet nibh. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Curabitur ultrices porta risus vitae mollis. Donec posuere maximus volutpat. Praesent vestibulum ipsum vel mi interdum, nec semper mauris vulputate. Phasellus efficitur ac est faucibus viverra. Cras id dapibus augue, non accumsan diam. Suspendisse ac orci interdum, porttitor mi a, malesuada nisl. Pellentesque iaculis consectetur elit, eu iaculis lectus efficitur a. Suspendisse finibus, nibh vel varius hendrerit, ex justo fringilla dui, in egestas tortor nulla vitae erat. Aliquam erat volutpat. Quisque bibendum, ante et ultricies viverra, lorem neque aliquet ex, sit amet rhoncus mi massa ac justo. Nulla euismod, magna vel vehicula viverra, urna diam tincidunt sem, at laoreet orci nunc a nisl."
+secret_data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi consectetur aliquet nibh. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Curabitur ultrices porta risus vitae mollis. Donec posuere maximus volutpat. Praesent vestibulum ipsum vel mi interdum, nec semper mauris vulputate. Phasellus efficitur ac est faucibus viverra. Cras id dapibus augue, non accumsan diam. Suspendisse ac orci interdum, porttitor mi a, malesuada nisl. Pellentesque iaculis consectetur elit, eu iaculis lectus efficitur a. Suspendisse finibus, nibh vel varius hendrerit, ex justo fringilla dui, in egestas tortor nulla vitae erat. Aliquam erat volutpat. Quisque bibendum, ante et ultricies viverra, lorem neque aliquet ex, sit amet rhoncus mi massa ac justo. Nulla euismod, magna vel vehicula viverra, urna diam tincidunt sem, at laoreet orci nunc a nisl. "
 # encode the data into the image
-encoded_image = encode(image_name=input_image, secret_data=secret_data, bit_length=2)
+encoded_image = encode(image_name=input_image, secret_data=secret_data, bit_length=7)
 # save the output image (encoded image)
 cv2.imwrite(output_image, encoded_image)
 # decode the secret data from the image
-decoded_data = decode(output_image, 2)
+decoded_data = decode(output_image, 7)
 print("Decoded data:", decoded_data)
