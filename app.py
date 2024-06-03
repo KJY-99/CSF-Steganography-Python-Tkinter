@@ -14,12 +14,12 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         if not self.listbox_data:
             print("Error: No image file added.")
             return
-        if not self.textbox_data.strip():  # Check if textbox_data is empty or contains only whitespace
+        if not self.tbox.get(1.0, "end-1c"):  # Check if textbox_data is empty or contains only whitespace
             print("Error: No text file added.")
-
+            return
         try:
             # Call the encode function with the appropriate arguments
-            encoded_image = encode(self.listbox_data, self.textbox_data, self.bit_data)
+            encoded_image = encode(self.listbox_data, self.tbox.get(1.0, "end-1c"), self.bit_data)
 
             # Convert the encoded image to a format Tkinter can display
             resized_encoded_image = image_resize(encoded_image, height=400)
@@ -43,7 +43,6 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         # Define TkDnD ver.
         self.TkdndVersion = TkinterDnD._require(self)
         self.listbox_data = ""
-        self.textbox_data = ""
         self.bit_data = 1
 
         # Drag and Drop Method - Listbox: Get filepath to listbox (IMPT: Omit spaces in file path)
@@ -56,15 +55,13 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
         # Drag and Drop Method - Textbox: Strip text from file (IMPT: Omit spaces in file path)
         def drop_inside_textbox(event):
-            self.tbox.delete("1.0", "end")
+            self.tbox.delete("1.0", "end") # Clear previous data
             event.data = event.data.strip("}{")
             if event.data.endswith(".txt"):
                 with open(event.data, "r") as file:
-                    self.textbox_data = ""  # Clear previous data
                     for line in file:
                         line = line.strip()
                         self.tbox.insert("end", f"{line}\n")
-                        self.textbox_data += f"{line}\n"
 
 
         def slider_event(value):
