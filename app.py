@@ -11,18 +11,28 @@ from img import encode, decode
 class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
     def display_output_image(self):
+        if not self.listbox_data:
+            print("Error: No image file added.")
+            return
+        if not self.textbox_data.strip():  # Check if textbox_data is empty or contains only whitespace
+            print("Error: No text file added.")
+
         try:
             # Call the encode function with the appropriate arguments
             encoded_image = encode(self.listbox_data, self.textbox_data, self.bit_data)
 
             # Convert the encoded image to a format Tkinter can display
-            encoded_image_pil = Image.fromarray(cv2.cvtColor(encoded_image, cv2.COLOR_BGR2RGB))
-            encoded_image_tk = ImageTk.PhotoImage(encoded_image_pil)
+            resized_encoded_image = image_resize(encoded_image, height=400)
+            resized_encoded_image_pil = Image.fromarray(cv2.cvtColor(resized_encoded_image, cv2.COLOR_BGR2RGB))
+            resized_encoded_image_tk = ImageTk.PhotoImage(resized_encoded_image_pil)
+
+            # save the output image (encoded image)
+            cv2.imwrite("output.png", encoded_image)
 
             # Update the output image label
             self.output_image_label_text.configure(text='Normalized Image')
-            self.output_image_label.configure(image=encoded_image_tk)
-            self.output_image_label.image = encoded_image_tk  # Keep a reference to avoid garbage collection
+            self.output_image_label.configure(image=resized_encoded_image_tk)
+            self.output_image_label.image = resized_encoded_image_tk  # Keep a reference to avoid garbage collection
 
             print("Encoding successful")
         except Exception as e:
@@ -34,11 +44,12 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.TkdndVersion = TkinterDnD._require(self)
         self.listbox_data = ""
         self.textbox_data = ""
-        self.bit_data = 0
+        self.bit_data = 1
 
         # Drag and Drop Method - Listbox: Get filepath to listbox (IMPT: Omit spaces in file path)
         def drop_inside_listbox(event):
             self.listb.insert("end", event.data)
+            event.data = event.data.strip("}{")
             file_path = event.data
             self.listbox_data = file_path
             display_input_image(file_path)
@@ -46,8 +57,10 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         # Drag and Drop Method - Textbox: Strip text from file (IMPT: Omit spaces in file path)
         def drop_inside_textbox(event):
             self.tbox.delete("1.0", "end")
+            event.data = event.data.strip("}{")
             if event.data.endswith(".txt"):
                 with open(event.data, "r") as file:
+                    self.textbox_data = ""  # Clear previous data
                     for line in file:
                         line = line.strip()
                         self.tbox.insert("end", f"{line}\n")
@@ -61,7 +74,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         # Function to display image in label
         def display_input_image(file_path):
             img = cv2.imread(file_path)
-            img = image_resize(img, height=250)
+            img = image_resize(img, height=400)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(img)
             img = ImageTk.PhotoImage(img)
@@ -94,7 +107,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         # Side Navigation (ALL SCREENS)
         self.navigation_frame = customtkinter.CTkFrame(self, corner_radius=0)
         self.navigation_frame.grid(row=0, column=0, sticky="nsew")
-        self.navigation_frame.grid_rowconfigure(5, weight=1)
+        self.navigation_frame.grid_rowconfigure(6, weight=1)
         self.navigation_frame_label = customtkinter.CTkLabel(self.navigation_frame, text="  Steganography",
                                                              image=self.logo_image,
                                                              compound="left",
@@ -127,6 +140,13 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
                                                            image=self.volume_image, anchor="w",
                                                            command=self.audio_screen_button_event)
         self.audio_screen_button.grid(row=4, column=0, sticky="ew")
+        self.decode_screen_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40,
+                                                           border_spacing=10, text="Decode",
+                                                           fg_color="transparent", text_color=("gray10", "gray90"),
+                                                           hover_color=("gray70", "gray30"),
+                                                           image=self.image_icon_image,anchor="w",
+                                                           command=self.decode_screen_button_event)
+        self.decode_screen_button.grid(row=5, column=0, sticky="ew")
 
         # DASHBOARD SCREEN
         self.home_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
@@ -147,7 +167,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.home_frame_button_4.grid(row=4, column=0, padx=20, pady=10)
 
         # IMAGE SCREEN (ERNEST & JY)
-        self.image_screen = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
+        self.image_screen = customtkinter.CTkScrollableFrame(self, corner_radius=0, fg_color="transparent")
         self.image_screen.grid_columnconfigure(0, weight=1)
         self.image_screen.grid_columnconfigure(1, weight=1)
 
@@ -170,35 +190,40 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         # Bit Selection Slider
         bit_value = tk.IntVar()
         self.slider_label = customtkinter.CTkLabel(self.image_screen, text="Selected number of bits: 1")
-        self.slider_label.grid(row=2, column=1, padx=15, pady=(10, 0), sticky="nsew")
-        self.bit_slider = customtkinter.CTkSlider(self.image_screen, from_=1, to=8, number_of_steps=7, command=slider_event, variable=bit_value)
-        self.bit_slider.grid(row=3, column=1, padx=15, pady=10, sticky="ew")
+        self.slider_label.grid(row=2, column=0, padx=15, pady=(10, 0), sticky="nsew")
+        self.bit_slider = customtkinter.CTkSlider(self.image_screen, from_=1, to=8, number_of_steps=7,
+                                                  command=slider_event, variable=bit_value)
+        self.bit_slider.grid(row=3, column=0, padx=15, pady=0, sticky="ew")
 
-        # Encode and Decode buttons
-        self.encode_button = customtkinter.CTkButton(self.image_screen, text="Encode", command= self.display_output_image)
-        self.encode_button.grid(row=2, column=0, padx=0, pady=10)
-
-        self.decode_button = customtkinter.CTkButton(self.image_screen, text="Decode")
-        self.decode_button.grid(row=2, column=0, padx=20, pady=10, sticky="ne")
+        # Encode button
+        self.encode_button = customtkinter.CTkButton(self.image_screen, text="Encode",
+                                                     command=self.display_output_image)
+        self.encode_button.grid(row=2, column=1, padx=(10, 15), pady=(10, 0), sticky="ew")
 
         # Label for displaying the input image
         self.input_image_label_text = customtkinter.CTkLabel(self.image_screen, text="")
-        self.input_image_label_text.grid(row=4, column=0, columnspan=2, padx=10, pady=(10, 0))
+        self.input_image_label_text.grid(row=4, column=0, padx=10, pady=(50, 0))
+
         self.input_image_label = customtkinter.CTkLabel(self.image_screen, text="", image=None)
-        self.input_image_label.grid(row=5, column=0, columnspan=2, padx=10, pady=10)
+        self.input_image_label.grid(row=5, column=0, padx=10, pady=10)
 
         # Label for displaying the output image
         self.output_image_label_text = customtkinter.CTkLabel(self.image_screen, text="")
-        self.output_image_label_text.grid(row=6, column=0, columnspan=2, padx=10, pady=(10, 0))
+        self.output_image_label_text.grid(row=4, column=1, padx=10, pady=(50, 0))
         self.output_image_label = customtkinter.CTkLabel(self.image_screen, text="", image=None)
-        self.output_image_label.grid(row=7, column=0, columnspan=2, padx=10, pady=10)
-
+        self.output_image_label.grid(row=5, column=1, padx=10, pady=10)
 
         # VIDEO SCREEN (INSERT YOUR UI ELEMENTS HERE) [ALVIS & DANIEL]
-        self.video_screen = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
+        self.video_screen = customtkinter.CTkScrollableFrame(self, corner_radius=0, fg_color="transparent")
 
         # AUDIO SCREEN (INSERT YOUR UI ELEMENTS HERE) [SHIFA & JING YI]
-        self.audio_screen = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
+        self.audio_screen = customtkinter.CTkScrollableFrame(self, corner_radius=0, fg_color="transparent")
+
+        # DECODE SCREEN (USED FOR ALL FORMAT OF DECODING)
+        self.decode_screen = customtkinter.CTkScrollableFrame(self, corner_radius=0, fg_color="transparent")
+
+        self.decode_button = customtkinter.CTkButton(self.decode_screen, text="Decode")
+        self.decode_button.grid(row=2, column=0, padx=20, pady=10, sticky="ne")
 
         # Select default frame - DASHBOARD
         self.select_frame_by_name("dashboard")
@@ -209,6 +234,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.image_screen_button.configure(fg_color=("gray75", "gray25") if name == "image_screen" else "transparent")
         self.video_screen_button.configure(fg_color=("gray75", "gray25") if name == "video_screen" else "transparent")
         self.audio_screen_button.configure(fg_color=("gray75", "gray25") if name == "audio_screen" else "transparent")
+        self.decode_screen_button.configure(fg_color=("gray75", "gray25") if name == "decode_screen" else "transparent")
 
         # Add and destroy frame
         if name == "dashboard":
@@ -227,6 +253,11 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
             self.audio_screen.grid(row=0, column=1, sticky="nsew")
         else:
             self.audio_screen.grid_forget()
+        if name == "decode_screen":
+            self.decode_screen.grid(row=0, column=1, sticky="nsew")
+        else:
+            self.decode_screen.grid_forget()
+
 
     def home_button_event(self):
         self.select_frame_by_name("dashboard")
@@ -239,6 +270,9 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
     def audio_screen_button_event(self):
         self.select_frame_by_name("audio_screen")
+
+    def decode_screen_button_event(self):
+        self.select_frame_by_name("decode_screen")
 
 
 # Run Application
