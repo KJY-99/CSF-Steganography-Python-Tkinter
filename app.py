@@ -33,10 +33,11 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
             self.output_image_label_text.configure(text='Normalized Image')
             self.output_image_label.configure(image=resized_encoded_image_tk)
             self.output_image_label.image = resized_encoded_image_tk  # Keep a reference to avoid garbage collection
-
             print("Encoding successful")
+
         except Exception as e:
             print(f"An error occurred: {e}")
+
     def __init__(self):
         super().__init__()
 
@@ -46,23 +47,22 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.bit_data = 1
 
         # Drag and Drop Method - Listbox: Get filepath to listbox (IMPT: Omit spaces in file path)
-        def drop_inside_listbox(event):
-            self.listb.insert("end", event.data)
+        def drop_inside_listbox(event, element):
+            element.insert("end", event.data)
             event.data = event.data.strip("}{")
             file_path = event.data
-            self.listbox_data = file_path
+            element = file_path
             display_input_image(file_path)
 
         # Drag and Drop Method - Textbox: Strip text from file (IMPT: Omit spaces in file path)
-        def drop_inside_textbox(event):
-            self.tbox.delete("1.0", "end") # Clear previous data
+        def drop_inside_textbox(event, element):
+            element.delete("1.0", "end") # Clear previous data
             event.data = event.data.strip("}{")
             if event.data.endswith(".txt"):
                 with open(event.data, "r") as file:
                     for line in file:
                         line = line.strip()
-                        self.tbox.insert("end", f"{line}\n")
-
+                        element.insert("end", f"{line}\n")
 
         def slider_event(value):
             self.slider_label.configure(text="Selected number of bits: "+str(int(value)))
@@ -174,7 +174,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.tbox = tk.Text(self.image_screen, width=70, height=25)
         self.tbox.grid(row=1, column=0, padx=15, pady=10, sticky="nsew")
         self.tbox.drop_target_register(DND_FILES)
-        self.tbox.dnd_bind("<<Drop>>", drop_inside_textbox)
+        self.tbox.dnd_bind("<<Drop>>", lambda event: drop_inside_textbox(event, element=self.tbox))
 
         # Listbox to drag and drop file path
         self.file_label = customtkinter.CTkLabel(self.image_screen, text="Insert cover image:",font=customtkinter.CTkFont(size=13, weight="bold"))
@@ -182,7 +182,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.listb = tk.Listbox(self.image_screen, selectmode=tk.SINGLE, background="#ffe0d6", width=90, height=25)
         self.listb.grid(row=1, column=1, padx=15, pady=10, sticky="nsew")
         self.listb.drop_target_register(DND_FILES)
-        self.listb.dnd_bind("<<Drop>>", drop_inside_listbox)
+        self.listb.dnd_bind("<<Drop>>", lambda event: drop_inside_listbox(event, element=self.listb))
 
         # Bit Selection Slider
         bit_value = tk.IntVar()
@@ -216,41 +216,36 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         # AUDIO SCREEN (INSERT YOUR UI ELEMENTS HERE) [SHIFA & JING YI]
         self.audio_screen = customtkinter.CTkScrollableFrame(self, corner_radius=0, fg_color="transparent")
 
-        # DECODE SCREEN (USED FOR ALL FORMAT OF DECODING)
+        # DECODE SCREEN (USED FOR ALL FORMATS OF DECODING)
         self.decode_screen = customtkinter.CTkScrollableFrame(self, corner_radius=0, fg_color="transparent")
-        self.decode_screen.grid_columnconfigure(0, weight=1)
         self.decode_screen.grid_columnconfigure(1, weight=1)
 
         # Textbox
-        self.text_label = customtkinter.CTkLabel(self.decode_screen, text="Insert text file payload:",
-                                                 font=customtkinter.CTkFont(size=13, weight="bold"))
-        self.text_label.grid(row=0, column=0, columnspan=1)
-        self.tbox = tk.Text(self.decode_screen, width=70, height=25)
-        self.tbox.grid(row=1, column=0, padx=15, pady=10, sticky="nsew")
-        self.tbox.drop_target_register(DND_FILES)
-        self.tbox.dnd_bind("<<Drop>>", drop_inside_textbox)
+        self.decode_text_label = customtkinter.CTkLabel(self.decode_screen, text="Insert text file payload:", font=customtkinter.CTkFont(size=13, weight="bold"))
+        self.decode_text_label.grid(row=0, column=0, columnspan=1)
+        self.decode_tbox = tk.Text(self.decode_screen, width=70, height=25)
+        self.decode_tbox.grid(row=1, column=0, padx=15, pady=10, sticky="nsew")
+        self.decode_tbox.drop_target_register(DND_FILES)
+        self.decode_tbox.dnd_bind("<<Drop>>", lambda event: drop_inside_textbox(event, element=self.decode_tbox))
 
         # Listbox to drag and drop file path
-        self.file_label = customtkinter.CTkLabel(self.decode_screen, text="Insert cover image:",
-                                                 font=customtkinter.CTkFont(size=13, weight="bold"))
-        self.file_label.grid(row=0, column=1)
-        self.listb = tk.Listbox(self.decode_screen, selectmode=tk.SINGLE, background="#ffe0d6", width=90, height=25)
-        self.listb.grid(row=1, column=1, padx=15, pady=10, sticky="nsew")
-        self.listb.drop_target_register(DND_FILES)
-        self.listb.dnd_bind("<<Drop>>", drop_inside_listbox)
+        self.decode_file_label = customtkinter.CTkLabel(self.decode_screen, text="Insert cover image:", font=customtkinter.CTkFont(size=13, weight="bold"))
+        self.decode_file_label.grid(row=0, column=1)
+        self.decode_listb = tk.Listbox(self.decode_screen, selectmode=tk.SINGLE, background="#ffe0d6", width=90, height=25)
+        self.decode_listb.grid(row=1, column=1, padx=15, pady=10, sticky="nsew")
+        self.decode_listb.drop_target_register(DND_FILES)
+        self.decode_listb.dnd_bind("<<Drop>>", lambda event: drop_inside_listbox(event, element=self.decode_listb))
 
         # Bit Selection Slider
-        bit_value = tk.IntVar()
-        self.slider_label = customtkinter.CTkLabel(self.decode_screen, text="Selected number of bits: 1")
-        self.slider_label.grid(row=2, column=0, padx=15, pady=(10, 0), sticky="nsew")
-        self.bit_slider = customtkinter.CTkSlider(self.decode_screen, from_=1, to=8, number_of_steps=7,
-                                                  command=slider_event, variable=bit_value)
-        self.bit_slider.grid(row=3, column=0, padx=15, pady=0, sticky="ew")
+        decode_bit_value = tk.IntVar()
+        self.decode_slider_label = customtkinter.CTkLabel(self.decode_screen, text="Selected number of bits: 1")
+        self.decode_slider_label.grid(row=2, column=0, padx=15, pady=(10, 0), sticky="nsew")
+        self.decode_bit_slider = customtkinter.CTkSlider(self.decode_screen, from_=1, to=8, number_of_steps=7, command=slider_event, variable=decode_bit_value)
+        self.decode_bit_slider.grid(row=3, column=0, padx=15, pady=0, sticky="ew")
 
-        #Decode Button
+        # Decode Button
         self.decode_button = customtkinter.CTkButton(self.decode_screen, text="Decode")
         self.decode_button.grid(row=2, column=1, padx=10, pady=10, sticky="ew")
-
 
         # Select default frame - DASHBOARD
         self.select_frame_by_name("dashboard")
