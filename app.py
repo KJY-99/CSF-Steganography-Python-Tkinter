@@ -30,7 +30,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
             cv2.imwrite("output.png", encoded_image)
 
             # Update the output image label
-            self.output_image_label_text.configure(text='Normalized Image')
+            self.output_image_label_text.configure(text='Encoded Image')
             self.output_image_label.configure(image=resized_encoded_image_tk)
             self.output_image_label.image = resized_encoded_image_tk  # Keep a reference to avoid garbage collection
             print("Encoding successful")
@@ -52,6 +52,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
             event.data = event.data.strip("}{")
             file_path = event.data
             element = file_path
+            self.listbox_data = file_path
             display_input_image(file_path)
 
         # Drag and Drop Method - Textbox: Strip text from file (IMPT: Omit spaces in file path)
