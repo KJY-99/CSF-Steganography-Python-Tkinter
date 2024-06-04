@@ -10,7 +10,7 @@ from img import encode, decode
 # Allow for TkDnD to utilise CTK
 class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
-    def display_output_image(self):
+    def image_encode_and_display(self):
         if not self.listbox_data:
             print("Error: No image file added.")
             return
@@ -48,10 +48,8 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
         # Drag and Drop Method - Listbox: Get filepath to listbox (IMPT: Omit spaces in file path)
         def drop_inside_listbox(event, element):
-            element.insert("end", event.data)
-            event.data = event.data.strip("}{")
-            file_path = event.data
-            element = file_path
+            file_path = event.data.strip("}{")
+            element.insert("end", file_path)
             self.listbox_data = file_path
             display_input_image(file_path)
 
@@ -65,9 +63,15 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
                         line = line.strip()
                         element.insert("end", f"{line}\n")
 
-        def slider_event(value):
+        # Image encode slider
+        def image_slider_event(value):
             self.slider_label.configure(text="Selected number of bits: "+str(int(value)))
             self.bit_data = int(value)
+
+        # Decode slider
+        def decode_slider_event(value):
+            self.decode_slider_label.configure(text="Selected number of bits: "+str(int(value)))
+            self.decode_bit_value = int(value)
 
         # Function to display image in label
         def display_input_image(file_path):
@@ -190,12 +194,11 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.slider_label = customtkinter.CTkLabel(self.image_screen, text="Selected number of bits: 1")
         self.slider_label.grid(row=2, column=0, padx=15, pady=(10, 0), sticky="nsew")
         self.bit_slider = customtkinter.CTkSlider(self.image_screen, from_=1, to=8, number_of_steps=7,
-                                                  command=slider_event, variable=bit_value)
+                                                  command=image_slider_event, variable=bit_value)
         self.bit_slider.grid(row=3, column=0, padx=15, pady=0, sticky="ew")
 
         # Encode button
-        self.encode_button = customtkinter.CTkButton(self.image_screen, text="Encode",
-                                                     command=self.display_output_image)
+        self.encode_button = customtkinter.CTkButton(self.image_screen, text="Encode", command=self.image_encode_and_display)
         self.encode_button.grid(row=2, column=1, padx=(10, 15), pady=(10, 0), sticky="ew")
 
         # Label for displaying the input image
@@ -241,7 +244,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         decode_bit_value = tk.IntVar()
         self.decode_slider_label = customtkinter.CTkLabel(self.decode_screen, text="Selected number of bits: 1")
         self.decode_slider_label.grid(row=2, column=0, padx=15, pady=(10, 0), sticky="nsew")
-        self.decode_bit_slider = customtkinter.CTkSlider(self.decode_screen, from_=1, to=8, number_of_steps=7, command=slider_event, variable=decode_bit_value)
+        self.decode_bit_slider = customtkinter.CTkSlider(self.decode_screen, from_=1, to=8, number_of_steps=7, command=decode_slider_event, variable=decode_bit_value)
         self.decode_bit_slider.grid(row=3, column=0, padx=15, pady=0, sticky="ew")
 
         # Decode Button
