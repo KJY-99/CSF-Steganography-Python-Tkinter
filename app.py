@@ -218,9 +218,39 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
         # DECODE SCREEN (USED FOR ALL FORMAT OF DECODING)
         self.decode_screen = customtkinter.CTkScrollableFrame(self, corner_radius=0, fg_color="transparent")
+        self.decode_screen.grid_columnconfigure(0, weight=1)
+        self.decode_screen.grid_columnconfigure(1, weight=1)
 
+        # Textbox
+        self.text_label = customtkinter.CTkLabel(self.decode_screen, text="Insert text file payload:",
+                                                 font=customtkinter.CTkFont(size=13, weight="bold"))
+        self.text_label.grid(row=0, column=0, columnspan=1)
+        self.tbox = tk.Text(self.decode_screen, width=70, height=25)
+        self.tbox.grid(row=1, column=0, padx=15, pady=10, sticky="nsew")
+        self.tbox.drop_target_register(DND_FILES)
+        self.tbox.dnd_bind("<<Drop>>", drop_inside_textbox)
+
+        # Listbox to drag and drop file path
+        self.file_label = customtkinter.CTkLabel(self.decode_screen, text="Insert cover image:",
+                                                 font=customtkinter.CTkFont(size=13, weight="bold"))
+        self.file_label.grid(row=0, column=1)
+        self.listb = tk.Listbox(self.decode_screen, selectmode=tk.SINGLE, background="#ffe0d6", width=90, height=25)
+        self.listb.grid(row=1, column=1, padx=15, pady=10, sticky="nsew")
+        self.listb.drop_target_register(DND_FILES)
+        self.listb.dnd_bind("<<Drop>>", drop_inside_listbox)
+
+        # Bit Selection Slider
+        bit_value = tk.IntVar()
+        self.slider_label = customtkinter.CTkLabel(self.decode_screen, text="Selected number of bits: 1")
+        self.slider_label.grid(row=2, column=0, padx=15, pady=(10, 0), sticky="nsew")
+        self.bit_slider = customtkinter.CTkSlider(self.decode_screen, from_=1, to=8, number_of_steps=7,
+                                                  command=slider_event, variable=bit_value)
+        self.bit_slider.grid(row=3, column=0, padx=15, pady=0, sticky="ew")
+
+        #Decode Button
         self.decode_button = customtkinter.CTkButton(self.decode_screen, text="Decode")
-        self.decode_button.grid(row=2, column=0, padx=20, pady=10, sticky="ne")
+        self.decode_button.grid(row=2, column=1, padx=10, pady=10, sticky="ew")
+
 
         # Select default frame - DASHBOARD
         self.select_frame_by_name("dashboard")
