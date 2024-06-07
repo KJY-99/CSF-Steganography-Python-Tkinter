@@ -45,7 +45,6 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
         # Retrieve the value from the combobox
         selected_payload = self.decode_combobox.get()
-
         # Retrieve the filepath within the listbox
         decode_filepath = self.decode_listb.get(tk.ACTIVE)
         if decode_filepath.endswith(('jpg', 'png')):
@@ -53,9 +52,9 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
                 decode_data = decode_img(decode_filepath, bit_value)
                 self.decode_output_label.configure(text=decode_data)
             else:
-                messagebox.showwarning("Not Supported", "Image does not support " + selected_payload + " types")
+                messagebox.showwarning("Not Supported", "Image decoding does not support " + selected_payload + " payloads")
         else:
-            messagebox.showwarning("Wrong File Type", "check if you have entered an image.")
+            messagebox.showwarning("Wrong File Type", "Check if you have entered an image.")
 
         #elif filepath.endswith('avi'):
             # decode_video =(filepath,bit_value,selected_payload)
@@ -71,6 +70,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
         # Drag and Drop Method - Listbox: Get filepath to listbox (IMPT: Omit spaces in file path)
         def drop_inside_listbox(event, element):
+            element.delete("0", "end") # Clear previous data
             file_path = event.data.strip("}{")
             element.insert("end", file_path)
             self.listbox_data = file_path
@@ -133,7 +133,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.navigation_frame = customtkinter.CTkFrame(self, corner_radius=0)
         self.navigation_frame.grid(row=0, column=0, sticky="nsew")
         self.navigation_frame.grid_rowconfigure(6, weight=1)
-        self.navigation_frame_label = customtkinter.CTkLabel(self.navigation_frame, text="  Steganography",
+        self.navigation_frame_label = customtkinter.CTkLabel(self.navigation_frame, text="Steganography",
                                                              image=self.logo_image,
                                                              compound="left",
                                                              font=customtkinter.CTkFont(size=15, weight="bold"))
@@ -236,7 +236,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         # Dropdown box
         self.decode_text_label = customtkinter.CTkLabel(self.decode_screen, text="Select file payload used in encoding process:", font=customtkinter.CTkFont(size=13, weight="bold"))
         self.decode_text_label.grid(row=2, column=0, padx=15, pady=5, sticky="w")
-        self.decode_combobox = customtkinter.CTkComboBox(self.decode_screen, values=['Text', 'Image', 'Audio'], width=300, height=25)
+        self.decode_combobox = customtkinter.CTkComboBox(self.decode_screen,state="readonly", values=['Text', 'Image', 'Audio'], width=300, height=25)
         self.decode_combobox.grid(row=3, column=0, columnspan=3, padx=15, pady=10, sticky="ew")
         self.selected_payload = self.decode_combobox.get()
 
