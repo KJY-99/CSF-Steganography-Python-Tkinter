@@ -124,7 +124,6 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
                                                        size=(20, 20))
 
         # Navigation icons
-        self.home_image = customtkinter.CTkImage(dark_image=Image.open(os.path.join(image_path, "home_light.png")), size=(20, 20))
         self.chat_image = customtkinter.CTkImage(dark_image=Image.open(os.path.join(image_path, "chat_light.png")), size=(20, 20))
         self.add_user_image = customtkinter.CTkImage(dark_image=Image.open(os.path.join(image_path, "add_user_light.png")), size=(20, 20))
         self.video_image = customtkinter.CTkImage(dark_image=Image.open(os.path.join(image_path, "video_icon.png")), size=(20, 20))
@@ -139,12 +138,6 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
                                                              compound="left",
                                                              font=customtkinter.CTkFont(size=15, weight="bold"))
         self.navigation_frame_label.grid(row=0, column=0, padx=20, pady=20)
-        self.home_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40, border_spacing=10,
-                                                   text="Home",
-                                                   fg_color="transparent", text_color=("gray10", "gray90"),
-                                                   hover_color=("gray70", "gray30"),
-                                                   image=self.home_image, anchor="w", command=self.home_button_event)
-        self.home_button.grid(row=1, column=0, sticky="ew")
         self.image_screen_button = customtkinter.CTkButton(self.navigation_frame, corner_radius=0, height=40,
                                                            border_spacing=10, text="Image",
                                                            fg_color="transparent", text_color=("gray10", "gray90"),
@@ -173,24 +166,6 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
                                                            image=self.image_icon_image,anchor="w",
                                                            command=self.decode_screen_button_event)
         self.decode_screen_button.grid(row=5, column=0, sticky="ew")
-
-        # DASHBOARD SCREEN
-        self.home_frame = customtkinter.CTkFrame(self, corner_radius=0, fg_color="transparent")
-        self.home_frame.grid_columnconfigure(0, weight=1)
-
-        # Image Example
-        self.home_frame_large_image_label = customtkinter.CTkLabel(self.home_frame, text="", image=self.large_test_image)
-        self.home_frame_large_image_label.grid(row=0, column=0, padx=20, pady=10)
-
-        # Buttons 1 - 4 Example
-        self.home_frame_button_1 = customtkinter.CTkButton(self.home_frame, text="", image=self.image_icon_image)
-        self.home_frame_button_1.grid(row=1, column=0, padx=20, pady=10)
-        self.home_frame_button_2 = customtkinter.CTkButton(self.home_frame, text="CTkButton", image=self.image_icon_image, compound="right")
-        self.home_frame_button_2.grid(row=2, column=0, padx=20, pady=10)
-        self.home_frame_button_3 = customtkinter.CTkButton(self.home_frame, text="CTkButton", image=self.image_icon_image, compound="top")
-        self.home_frame_button_3.grid(row=3, column=0, padx=20, pady=10)
-        self.home_frame_button_4 = customtkinter.CTkButton(self.home_frame, text="CTkButton", image=self.image_icon_image, compound="bottom", anchor="w")
-        self.home_frame_button_4.grid(row=4, column=0, padx=20, pady=10)
 
         # IMAGE SCREEN (ERNEST & JY)
         self.image_screen = customtkinter.CTkScrollableFrame(self, corner_radius=0, fg_color="transparent")
@@ -280,22 +255,17 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.decode_output_label = customtkinter.CTkLabel(self.decode_screen, text="", image=None, wraplength=500)
         self.decode_output_label.grid(row=6, column=0, columnspan=3, padx=10, pady=(50, 5), sticky="ew")
 
-        # Select default frame - DASHBOARD
-        self.select_frame_by_name("dashboard")
+        # Select default frame - IMAGES
+        self.select_frame_by_name("image_screen")
 
     def select_frame_by_name(self, name):
         # Change side nav button color on select
-        self.home_button.configure(fg_color=("gray75", "gray25") if name == "dashboard" else "transparent")
         self.image_screen_button.configure(fg_color=("gray75", "gray25") if name == "image_screen" else "transparent")
         self.video_screen_button.configure(fg_color=("gray75", "gray25") if name == "video_screen" else "transparent")
         self.audio_screen_button.configure(fg_color=("gray75", "gray25") if name == "audio_screen" else "transparent")
         self.decode_screen_button.configure(fg_color=("gray75", "gray25") if name == "decode_screen" else "transparent")
 
         # Add and destroy frame
-        if name == "dashboard":
-            self.home_frame.grid(row=0, column=1, sticky="nsew")
-        else:
-            self.home_frame.grid_forget()
         if name == "image_screen":
             self.image_screen.grid(row=0, column=1, sticky="nsew")
         else:
@@ -312,10 +282,6 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
             self.decode_screen.grid(row=0, column=1, sticky="nsew")
         else:
             self.decode_screen.grid_forget()
-
-
-    def home_button_event(self):
-        self.select_frame_by_name("dashboard")
 
     def image_screen_button_event(self):
         self.select_frame_by_name("image_screen")
