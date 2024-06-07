@@ -211,23 +211,22 @@ def image_to_binary(image_path):
         decoded_data += chr (int(byte, 2))
     return decoded_data
 
-def binary_to_image(binary_data, output_path):
+def binary_to_image(binary_data):
     binary_string = to_bin(binary_data)
     binary_data = bytes(int(binary_string[i:i+8], 2) for i in range(0, len(binary_string), 8))
     nparr = np.frombuffer(binary_data, np.uint8)
     image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     if image is None:
         raise ValueError("Image decoding failed")
-    cv2.imwrite(output_path, image)
+    return image
+# video_path = "noaudio.avi"
+# encoded_video_path ="output_video.avi"
+# bit_length = 2
+# input_image_path = "test.png"
+# secret = image_to_binary(input_image_path)
+# output_image_path = "hidden.png"
 
-video_path = "noaudio.avi"
-encoded_video_path ="output_video.avi"
-bit_length = 2
-input_image_path = "test.png"
-secret = image_to_binary(input_image_path)
-output_image_path = "hidden.png"
-
-video_encryption(video_path,secret,bit_length)
-secret_encoded =video_decryption(encoded_video_path,bit_length)
-binary_to_image(secret_encoded,output_image_path)
-cleandir()
+# video_encryption(video_path,secret,bit_length)
+# secret_encoded =video_decryption(encoded_video_path,bit_length)
+# binary_to_image(secret_encoded)
+# cleandir()

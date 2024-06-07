@@ -5,8 +5,8 @@ import os, cv2
 from tkinterdnd2 import DND_FILES, TkinterDnD
 from tkinter import messagebox
 from PIL import Image, ImageTk
-from img import image_resize
-from img import encode_img, decode_img
+from img import image_resize,encode_img, decode_img
+from video import video_encryption,video_decryption,image_to_binary,binary_to_image
 
 # Allow for TkDnD to utilise CTK
 class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
@@ -53,12 +53,21 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
                 self.decode_output_label.configure(text=decode_data)
             else:
                 messagebox.showwarning("Not Supported", "Image decoding does not support " + selected_payload + " payloads")
+        elif decode_filepath.endswith('avi'):
+            decode_data = video_decryption(decode_filepath, bit_value)
+            if selected_payload == "Text":
+                self.decode_output_label.configure(text=decode_data)
+            elif selected_payload == "Image":
+                decode_image  = binary_to_image(decode_data)
+                resized_decoded_image = image_resize(decode_image, height=400)
+                resized_decoded_image_pil = Image.fromarray(cv2.cvtColor(resized_decoded_image, cv2.COLOR_BGR2RGB))
+                resized_decoded_image_tk = ImageTk.PhotoImage(resized_decoded_image_pil)
+                self.output_image_label.configure(image=resized_decoded_image_tk)
+                cv2.imwrite("video_output.png", decode_image)
+            else:
+                messagebox.showwarning("Not Supported", "Video decoding does not support " + selected_payload + " payloads")
         else:
-            messagebox.showwarning("Wrong File Type", "Check if you have entered an image.")
-
-        #elif filepath.endswith('avi'):
-            # decode_video =(filepath,bit_value,selected_payload)
-
+            messagebox.showwarning("Invalid Type", "Accepted cover : .png, .wav, .avi")
     def __init__(self):
         super().__init__()
 
