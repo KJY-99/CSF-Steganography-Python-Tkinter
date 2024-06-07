@@ -26,7 +26,7 @@ def to_bin(data):
     else:
         raise TypeError("Type not supported.")
 
-def encode(image_name, secret_data, bit_length):
+def encode_img(image_name, secret_data, bit_length):
     # Read image
     image = cv2.imread(image_name)
     # Height * Width * RGB (bytes)
@@ -62,7 +62,7 @@ def encode(image_name, secret_data, bit_length):
             break
     return image
 
-def decode(image_name, bit_length):
+def decode_img(image_name, bit_length):
     print("decode")
     # Read image
     image = cv2.imread(image_name)
@@ -84,14 +84,14 @@ def decode(image_name, bit_length):
             binary_data += b[-bit_length:]
     return decoded_data
 
-input_image = "test2.png"
-output_image = "output.png"
-secret_data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi consectetur aliquet nibh. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Curabitur ultrices porta risus vitae mollis. Donec posuere maximus volutpat. Praesent vestibulum ipsum vel mi interdum, nec semper mauris vulputate. Phasellus efficitur ac est faucibus viverra. Cras id dapibus augue, non accumsan diam. Suspendisse ac orci interdum, porttitor mi a, malesuada nisl. Pellentesque iaculis consectetur elit, eu iaculis lectus efficitur a. Suspendisse finibus, nibh vel varius hendrerit, ex justo fringilla dui, in egestas tortor nulla vitae erat. Aliquam erat volutpat. Quisque bibendum, ante et ultricies viverra, lorem neque aliquet ex, sit amet rhoncus mi massa ac justo. Nulla euismod, magna vel vehicula viverra, urna diam tincidunt sem, at laoreet orci nunc a nisl. "
-bit_length = 5
-# encode the data into the image
-encoded_image = encode(image_name=input_image, secret_data=secret_data, bit_length= bit_length)
-# save the output image (encoded image)
-cv2.imwrite(output_image, encoded_image)
-# decode the secret data from the image
-decoded_data = decode(output_image, bit_length)
-print("Decoded data:", decoded_data)
+
+# input_image = "test.png"  #png file path
+# output_image = "output.png"
+# secret_data = "" #text file path
+# # encode the data into the image
+# encoded_image = encode_img(image_name=input_image, secret_data=secret_data, bit_length=2)
+# # save the output image (encoded image)
+# cv2.imwrite(output_image, encoded_image)
+# # decode the secret data from the image
+# decoded_data = decode_img(output_image, 2)
+# print("Decoded data:", decoded_data)
