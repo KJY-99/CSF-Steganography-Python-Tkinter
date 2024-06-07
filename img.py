@@ -30,7 +30,7 @@ def encode_img(image_name, secret_data, bit_length):
     # Read image
     image = cv2.imread(image_name)
     # Height * Width * RGB (bytes)
-    n_bytes = image.shape[0] * image.shape[1] * 3 // 8
+    n_bytes = image.shape[0] * image.shape[1] * 3 // 8 * bit_length
     # Stopping criteria
     secret_data += "====="
     # Check image data feasibility
@@ -43,18 +43,19 @@ def encode_img(image_name, secret_data, bit_length):
     for row in image:
         for pixel in row:
             # Convert pixel to binary
-            r, g, b = to_bin(pixel)
+            rgb = to_bin(pixel)
             # Index last x elements of the pixel, append indexed secret data
-            if data_index < data_len:
-                pixel[0] = int(r[:-bit_length] + binary_secret_data[data_index:data_index + bit_length], 2)
-                data_index += bit_length
-            if data_index < data_len:
-                pixel[1] = int(g[:-bit_length] + binary_secret_data[data_index:data_index + bit_length], 2)
-                data_index += bit_length
-            if data_index < data_len:
-                pixel[2] = int(b[:-bit_length] + binary_secret_data[data_index:data_index + bit_length], 2)
-                data_index += bit_length
-            # Exit once all data is encoded
+            for i in range (len(rgb)):
+                if data_len >= data_index + bit_length:
+                    pixel[i] = int(rgb[i][:-bit_length] + binary_secret_data[data_index:data_index + bit_length], 2)
+                    data_index += bit_length
+                else:
+                    pixel[i] = int(rgb[i][:-bit_length] + binary_secret_data[data_index:data_len] + rgb[i][(8-bit_length+data_len-data_index):], 2 )
+                    data_index += (data_len-data_index)
+                    break
+                # Exit once all data is encoded
+                if data_index >= data_len:
+                    break
             if data_index >= data_len:
                 break
         if data_index >= data_len:
@@ -62,6 +63,7 @@ def encode_img(image_name, secret_data, bit_length):
     return image
 
 def decode_img(image_name, bit_length):
+    print("decode")
     # Read image
     image = cv2.imread(image_name)
     if image is None:
@@ -81,6 +83,7 @@ def decode_img(image_name, bit_length):
             binary_data += g[-bit_length:]
             binary_data += b[-bit_length:]
     return decoded_data
+
 
 # input_image = "test.png"  #png file path
 # output_image = "output.png"

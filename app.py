@@ -3,6 +3,7 @@ import tkinter as tk
 import os, cv2
 
 from tkinterdnd2 import DND_FILES, TkinterDnD
+from tkinter import messagebox
 from PIL import Image, ImageTk
 from img import image_resize
 from img import encode_img, decode_img
@@ -12,10 +13,10 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
     def image_encode_and_display(self):
         if not self.listbox_data:
-            print("Error: No image file added.")
+            messagebox.showerror("Error", "No image file added.")
             return
         if not self.tbox.get(1.0, "end-1c"):  # Check if textbox_data is empty or contains only whitespace
-            print("Error: No text file added.")
+            messagebox.showerror("Error", " No text file added.")
             return
         try:
             # Call the encode function with the appropriate arguments
@@ -47,19 +48,14 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
         # Retrieve the filepath within the listbox
         decode_filepath = self.decode_listb.get(tk.ACTIVE)
-
-        print(bit_value)
-        print(selected_payload)
-        print(decode_filepath)
-
         if decode_filepath.endswith(('jpg', 'png')):
             if selected_payload == "Text":
                 decode_data = decode_img(decode_filepath, bit_value)
                 self.decode_output_label.configure(text=decode_data)
             else:
-                print("Image does not support " + selected_payload + " types")
+                messagebox.showwarning("Not Supported", "Image does not support " + selected_payload + " types")
         else:
-            print("check if you have entered an image.")
+            messagebox.showwarning("Wrong File Type", "check if you have entered an image.")
 
         #elif filepath.endswith('avi'):
             # decode_video =(filepath,bit_value,selected_payload)
@@ -205,7 +201,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.text_label = customtkinter.CTkLabel(self.image_screen, text="Insert text file payload:", font=customtkinter.CTkFont(size=13, weight="bold"))
         self.text_label.grid(row=0, column=0, padx=15, pady=5, sticky="w")
         self.tbox = tk.Text(self.image_screen, width=70, height=25)
-        self.tbox.grid(row=1, column=0, columnspan=2, padx=15, pady=10, sticky="nsew")
+        self.tbox.grid(row=1, column=0, columnspan=3, padx=15, pady=10, sticky="nsew")
         self.tbox.drop_target_register(DND_FILES)
         self.tbox.dnd_bind("<<Drop>>", lambda event: drop_inside_textbox(event, element=self.tbox))
 
@@ -213,30 +209,31 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.file_label = customtkinter.CTkLabel(self.image_screen, text="Insert cover image:", font=customtkinter.CTkFont(size=13, weight="bold"))
         self.file_label.grid(row=2, column=0, padx=15, pady=5, sticky="w")
         self.listb = tk.Listbox(self.image_screen, selectmode=tk.SINGLE, background="#ffe0d6", width=50, height=2, font=20)
-        self.listb.grid(row=3, column=0, columnspan=2, padx=15, pady=10, sticky='ew')
+        self.listb.grid(row=3, column=0, columnspan=3, padx=15, pady=10, sticky='ew')
         self.listb.drop_target_register(DND_FILES)
         self.listb.dnd_bind("<<Drop>>", lambda event: drop_inside_listbox(event, element=self.listb))
+
 
         # Bit Selection Slider
         bit_value = tk.IntVar()
         self.slider_label = customtkinter.CTkLabel(self.image_screen, text="Selected number of bits: 1", font=customtkinter.CTkFont(size=13, weight="bold"))
-        self.slider_label.grid(row=4, column=0, padx=15, pady=5, sticky="w")
+        self.slider_label.grid(row=4, column=0, padx=15, pady=(10, 0), sticky="ew")
         self.bit_slider = customtkinter.CTkSlider(self.image_screen, from_=1, to=8, number_of_steps=7, command=image_slider_event, variable=bit_value)
-        self.bit_slider.grid(row=5, column=0, padx=15, pady=5, sticky="ew")
+        self.bit_slider.grid(row=5, column=0, columnspan=1, padx=15, pady=5, sticky="ew")
 
         # Encode button
         self.encode_button = customtkinter.CTkButton(self.image_screen, text="Encode", command=self.image_encode_and_display)
-        self.encode_button.grid(row=5, column=1, padx=15, pady=5, sticky="ew")
+        self.encode_button.grid(row=5, column=1, columnspan=1, padx=15, pady=5, sticky="ew")
 
         # Label for displaying the input image
         self.input_image_label_text = customtkinter.CTkLabel(self.image_screen, text="", font=customtkinter.CTkFont(size=13, weight="bold"))
-        self.input_image_label_text.grid(row=6, column=0, padx=15, pady=(10, 5), sticky="ew")
+        self.input_image_label_text.grid(row=6, column=0, padx=15, pady=(30, 5), sticky="ew")
         self.input_image_label = customtkinter.CTkLabel(self.image_screen, text="", image=None)
         self.input_image_label.grid(row=7, column=0, padx=15, pady=5, sticky="ew")
 
         # Label for displaying the output image
         self.output_image_label_text = customtkinter.CTkLabel(self.image_screen, text="", font=customtkinter.CTkFont(size=13, weight="bold"))
-        self.output_image_label_text.grid(row=6, column=1, padx=15, pady=(10, 5), sticky="ew")
+        self.output_image_label_text.grid(row=6, column=1, padx=15, pady=(30, 5), sticky="ew")
         self.output_image_label = customtkinter.CTkLabel(self.image_screen, text="", image=None)
         self.output_image_label.grid(row=7, column=1, padx=15, pady=5, sticky="ew")
 
@@ -280,8 +277,8 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.decode_button.grid(row=5, column=1, padx=15, pady=5, sticky="ew")
 
         # Output screen
-        self.decode_output_label = customtkinter.CTkLabel(self.decode_screen, text="", image=None)
-        self.decode_output_label.grid(row=6, column=0, padx=15, pady=5, sticky="ew")
+        self.decode_output_label = customtkinter.CTkLabel(self.decode_screen, text="", image=None, wraplength=500)
+        self.decode_output_label.grid(row=6, column=0, columnspan=3, padx=10, pady=(50, 5), sticky="ew")
 
         # Select default frame - DASHBOARD
         self.select_frame_by_name("dashboard")
