@@ -32,6 +32,7 @@ def encode_img(image_name, secret_data, bit_length):
     # Height * Width * RGB (bytes)
     n_bytes = image.shape[0] * image.shape[1] * 3 // 8 * bit_length
     # Stopping criteria
+    secret_data = "=====" + secret_data
     secret_data += "====="
     # Check image data feasibility
     if len(secret_data) > n_bytes:
@@ -63,7 +64,6 @@ def encode_img(image_name, secret_data, bit_length):
     return image
 
 def decode_img(image_name, bit_length):
-    print("decode")
     # Read image
     image = cv2.imread(image_name)
     if image is None:
@@ -75,6 +75,9 @@ def decode_img(image_name, bit_length):
             if len(binary_data) >= 8:
                 decoded_data += chr (int(binary_data[0:8], 2))
                 binary_data = binary_data[8:]
+            if decoded_data[:5] != "=====":
+                print("stopped")
+                return ""
             if decoded_data[-5:] == "=====":
                 return decoded_data[:-5]
             r, g, b = to_bin(pixel)
@@ -89,7 +92,7 @@ def decode_img(image_name, bit_length):
 # output_image = "output.png"
 # secret_data = "" #text file path
 # # encode the data into the image
-# encoded_image = encode_img(image_name=input_image, secret_data=secret_data, bit_length=2)
+# encoded_image = encode_img(image_name=input_image, secret_data=secret_data, bit_length=5)
 # # save the output image (encoded image)
 # cv2.imwrite(output_image, encoded_image)
 # # decode the secret data from the image
