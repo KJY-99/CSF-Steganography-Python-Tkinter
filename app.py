@@ -5,7 +5,7 @@ import os, cv2
 from tkinterdnd2 import DND_FILES, TkinterDnD
 from PIL import Image, ImageTk
 from img import image_resize
-from img import encode, decode
+from img import encode_img, decode_img
 
 # Allow for TkDnD to utilise CTK
 class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
@@ -19,7 +19,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
             return
         try:
             # Call the encode function with the appropriate arguments
-            encoded_image = encode(self.listbox_data, self.tbox.get(1.0, "end-1c"), self.bit_data)
+            encoded_image = encode_img(self.listbox_data, self.tbox.get(1.0, "end-1c"), self.bit_data)
 
             # Convert the encoded image to a format Tkinter can display
             resized_encoded_image = image_resize(encoded_image, height=400)
@@ -38,12 +38,39 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         except Exception as e:
             print(f"An error occurred: {e}")
 
+    def usedecodefunction(self):
+        # Retrieve the selected bit value
+        bit_value = self.decode_bit_value
+
+        # Retrieve the value from the combobox
+        selected_payload = self.decode_combobox.get()
+
+        # Retrieve the filepath within the listbox
+        decode_filepath = self.decode_listb.get(tk.ACTIVE)
+
+        print(bit_value)
+        print(selected_payload)
+        print(decode_filepath)
+
+        if decode_filepath.endswith(('jpg', 'png')):
+            if selected_payload == "Text":
+                decode_data = decode_img(decode_filepath, bit_value)
+                self.decode_output_label.configure(text=decode_data)
+            else:
+                print("Image does not support " + selected_payload + " types")
+        else:
+            print("check if you have entered an image.")
+
+        #elif filepath.endswith('avi'):
+            # decode_video =(filepath,bit_value,selected_payload)
+
     def __init__(self):
         super().__init__()
 
         # Define TkDnD ver.
         self.TkdndVersion = TkinterDnD._require(self)
         self.listbox_data = ""
+        self.decode_bit_value = 1
         self.bit_data = 1
 
         # Drag and Drop Method - Listbox: Get filepath to listbox (IMPT: Omit spaces in file path)
@@ -83,6 +110,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
             self.input_image_label_text.configure(text='Normal Image')
             self.input_image_label.configure(image=img)
             self.input_image_label.image = img
+
 
         # Define Title, Window size and Grid layout
         self.title("CSF Steganography Group --")
@@ -175,44 +203,43 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
         # Textbox
         self.text_label = customtkinter.CTkLabel(self.image_screen, text="Insert text file payload:", font=customtkinter.CTkFont(size=13, weight="bold"))
-        self.text_label.grid(row=0, column=0, columnspan=1)
+        self.text_label.grid(row=0, column=0, padx=15, pady=5, sticky="w")
         self.tbox = tk.Text(self.image_screen, width=70, height=25)
-        self.tbox.grid(row=1, column=0, padx=15, pady=10, sticky="nsew")
+        self.tbox.grid(row=1, column=0, columnspan=2, padx=15, pady=10, sticky="nsew")
         self.tbox.drop_target_register(DND_FILES)
         self.tbox.dnd_bind("<<Drop>>", lambda event: drop_inside_textbox(event, element=self.tbox))
 
         # Listbox to drag and drop file path
-        self.file_label = customtkinter.CTkLabel(self.image_screen, text="Insert cover image:",font=customtkinter.CTkFont(size=13, weight="bold"))
-        self.file_label.grid(row=0, column=1)
-        self.listb = tk.Listbox(self.image_screen, selectmode=tk.SINGLE, background="#ffe0d6", width=90, height=25)
-        self.listb.grid(row=1, column=1, padx=15, pady=10, sticky="nsew")
+        self.file_label = customtkinter.CTkLabel(self.image_screen, text="Insert cover image:", font=customtkinter.CTkFont(size=13, weight="bold"))
+        self.file_label.grid(row=2, column=0, padx=15, pady=5, sticky="w")
+        self.listb = tk.Listbox(self.image_screen, selectmode=tk.SINGLE, background="#ffe0d6", width=50, height=2, font=20)
+        self.listb.grid(row=3, column=0, columnspan=2, padx=15, pady=10, sticky='ew')
         self.listb.drop_target_register(DND_FILES)
         self.listb.dnd_bind("<<Drop>>", lambda event: drop_inside_listbox(event, element=self.listb))
 
         # Bit Selection Slider
         bit_value = tk.IntVar()
-        self.slider_label = customtkinter.CTkLabel(self.image_screen, text="Selected number of bits: 1")
-        self.slider_label.grid(row=2, column=0, padx=15, pady=(10, 0), sticky="nsew")
-        self.bit_slider = customtkinter.CTkSlider(self.image_screen, from_=1, to=8, number_of_steps=7,
-                                                  command=image_slider_event, variable=bit_value)
-        self.bit_slider.grid(row=3, column=0, padx=15, pady=0, sticky="ew")
+        self.slider_label = customtkinter.CTkLabel(self.image_screen, text="Selected number of bits: 1", font=customtkinter.CTkFont(size=13, weight="bold"))
+        self.slider_label.grid(row=4, column=0, padx=15, pady=5, sticky="w")
+        self.bit_slider = customtkinter.CTkSlider(self.image_screen, from_=1, to=8, number_of_steps=7, command=image_slider_event, variable=bit_value)
+        self.bit_slider.grid(row=5, column=0, padx=15, pady=5, sticky="ew")
 
         # Encode button
         self.encode_button = customtkinter.CTkButton(self.image_screen, text="Encode", command=self.image_encode_and_display)
-        self.encode_button.grid(row=2, column=1, padx=(10, 15), pady=(10, 0), sticky="ew")
+        self.encode_button.grid(row=5, column=1, padx=15, pady=5, sticky="ew")
 
         # Label for displaying the input image
-        self.input_image_label_text = customtkinter.CTkLabel(self.image_screen, text="")
-        self.input_image_label_text.grid(row=4, column=0, padx=10, pady=(50, 0))
-
+        self.input_image_label_text = customtkinter.CTkLabel(self.image_screen, text="", font=customtkinter.CTkFont(size=13, weight="bold"))
+        self.input_image_label_text.grid(row=6, column=0, padx=15, pady=(10, 5), sticky="ew")
         self.input_image_label = customtkinter.CTkLabel(self.image_screen, text="", image=None)
-        self.input_image_label.grid(row=5, column=0, padx=10, pady=10)
+        self.input_image_label.grid(row=7, column=0, padx=15, pady=5, sticky="ew")
 
         # Label for displaying the output image
-        self.output_image_label_text = customtkinter.CTkLabel(self.image_screen, text="")
-        self.output_image_label_text.grid(row=4, column=1, padx=10, pady=(50, 0))
+        self.output_image_label_text = customtkinter.CTkLabel(self.image_screen, text="", font=customtkinter.CTkFont(size=13, weight="bold"))
+        self.output_image_label_text.grid(row=6, column=1, padx=15, pady=(10, 5), sticky="ew")
         self.output_image_label = customtkinter.CTkLabel(self.image_screen, text="", image=None)
-        self.output_image_label.grid(row=5, column=1, padx=10, pady=10)
+        self.output_image_label.grid(row=7, column=1, padx=15, pady=5, sticky="ew")
+
 
         # VIDEO SCREEN (INSERT YOUR UI ELEMENTS HERE) [ALVIS & DANIEL]
         self.video_screen = customtkinter.CTkScrollableFrame(self, corner_radius=0, fg_color="transparent")
@@ -222,34 +249,39 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
         # DECODE SCREEN (USED FOR ALL FORMATS OF DECODING)
         self.decode_screen = customtkinter.CTkScrollableFrame(self, corner_radius=0, fg_color="transparent")
+        self.decode_screen.grid_columnconfigure(0, weight=1)
         self.decode_screen.grid_columnconfigure(1, weight=1)
-
-        # Textbox
-        self.decode_text_label = customtkinter.CTkLabel(self.decode_screen, text="Insert text file payload:", font=customtkinter.CTkFont(size=13, weight="bold"))
-        self.decode_text_label.grid(row=0, column=0, columnspan=1)
-        self.decode_tbox = tk.Text(self.decode_screen, width=70, height=25)
-        self.decode_tbox.grid(row=1, column=0, padx=15, pady=10, sticky="nsew")
-        self.decode_tbox.drop_target_register(DND_FILES)
-        self.decode_tbox.dnd_bind("<<Drop>>", lambda event: drop_inside_textbox(event, element=self.decode_tbox))
 
         # Listbox to drag and drop file path
         self.decode_file_label = customtkinter.CTkLabel(self.decode_screen, text="Insert cover image:", font=customtkinter.CTkFont(size=13, weight="bold"))
-        self.decode_file_label.grid(row=0, column=1)
-        self.decode_listb = tk.Listbox(self.decode_screen, selectmode=tk.SINGLE, background="#ffe0d6", width=90, height=25)
-        self.decode_listb.grid(row=1, column=1, padx=15, pady=10, sticky="nsew")
+        self.decode_file_label.grid(row=0, column=0, padx=15, pady=5, sticky="w")
+        self.decode_listb = tk.Listbox(self.decode_screen, selectmode=tk.SINGLE, background="#ffe0d6", width=50, height=2, font=20)
+        self.decode_listb.grid(row=1, column=0, columnspan=2, padx=15, pady=10, sticky='ew')
         self.decode_listb.drop_target_register(DND_FILES)
         self.decode_listb.dnd_bind("<<Drop>>", lambda event: drop_inside_listbox(event, element=self.decode_listb))
+
+
+        # Dropdown box
+        self.decode_text_label = customtkinter.CTkLabel(self.decode_screen, text="Select file payload used in encoding process:", font=customtkinter.CTkFont(size=13, weight="bold"))
+        self.decode_text_label.grid(row=2, column=0, padx=15, pady=5, sticky="w")
+        self.decode_combobox = customtkinter.CTkComboBox(self.decode_screen, values=['Text', 'Image', 'Audio'], width=300, height=25)
+        self.decode_combobox.grid(row=3, column=0, columnspan=3, padx=15, pady=10, sticky="ew")
+        self.selected_payload = self.decode_combobox.get()
 
         # Bit Selection Slider
         decode_bit_value = tk.IntVar()
         self.decode_slider_label = customtkinter.CTkLabel(self.decode_screen, text="Selected number of bits: 1")
-        self.decode_slider_label.grid(row=2, column=0, padx=15, pady=(10, 0), sticky="nsew")
+        self.decode_slider_label.grid(row=4, column=0, padx=15, pady=(10, 0), sticky="ew")
         self.decode_bit_slider = customtkinter.CTkSlider(self.decode_screen, from_=1, to=8, number_of_steps=7, command=decode_slider_event, variable=decode_bit_value)
-        self.decode_bit_slider.grid(row=3, column=0, padx=15, pady=0, sticky="ew")
+        self.decode_bit_slider.grid(row=5, column=0, padx=15, pady=5, sticky="ew")
 
         # Decode Button
-        self.decode_button = customtkinter.CTkButton(self.decode_screen, text="Decode")
-        self.decode_button.grid(row=2, column=1, padx=10, pady=10, sticky="ew")
+        self.decode_button = customtkinter.CTkButton(self.decode_screen, text="Decode", command=self.usedecodefunction)
+        self.decode_button.grid(row=5, column=1, padx=15, pady=5, sticky="ew")
+
+        # Output screen
+        self.decode_output_label = customtkinter.CTkLabel(self.decode_screen, text="", image=None)
+        self.decode_output_label.grid(row=6, column=0, padx=15, pady=5, sticky="ew")
 
         # Select default frame - DASHBOARD
         self.select_frame_by_name("dashboard")

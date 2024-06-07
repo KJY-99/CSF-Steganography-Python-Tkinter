@@ -26,13 +26,10 @@ def to_bin(data):
     else:
         raise TypeError("Type not supported.")
 
-def encode(image_name, secret_data, bit_length):
+def encode_img(image_name, secret_data, bit_length):
     # Read image
     image = cv2.imread(image_name)
     # Height * Width * RGB (bytes)
-    print(image_name)
-    print(secret_data)
-    print(bit_length)
     n_bytes = image.shape[0] * image.shape[1] * 3 // 8
     # Stopping criteria
     secret_data += "====="
@@ -62,10 +59,9 @@ def encode(image_name, secret_data, bit_length):
                 break
         if data_index >= data_len:
             break
-    print(image)
     return image
 
-def decode(image_name, bit_length):
+def decode_img(image_name, bit_length):
     # Read image
     image = cv2.imread(image_name)
     if image is None:
@@ -90,9 +86,9 @@ def decode(image_name, bit_length):
 # output_image = "output.png"
 # secret_data = "" #text file path
 # # encode the data into the image
-# encoded_image = encode(image_name=input_image, secret_data=secret_data, bit_length=2)
+# encoded_image = encode_img(image_name=input_image, secret_data=secret_data, bit_length=2)
 # # save the output image (encoded image)
 # cv2.imwrite(output_image, encoded_image)
 # # decode the secret data from the image
-# decoded_data = decode(output_image, 2)
+# decoded_data = decode_img(output_image, 2)
 # print("Decoded data:", decoded_data)
