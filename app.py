@@ -1,7 +1,7 @@
 import customtkinter
 import tkinter as tk
 import os, cv2
-
+import numpy
 from tkinterdnd2 import DND_FILES, TkinterDnD
 from tkinter import messagebox
 from PIL import Image, ImageTk
@@ -62,7 +62,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
                 resized_decoded_image = image_resize(decode_image, height=400)
                 resized_decoded_image_pil = Image.fromarray(cv2.cvtColor(resized_decoded_image, cv2.COLOR_BGR2RGB))
                 resized_decoded_image_tk = ImageTk.PhotoImage(resized_decoded_image_pil)
-                self.output_image_label.configure(image=resized_decoded_image_tk)
+                self.decode_output_label.configure(image=resized_decoded_image_tk)
                 cv2.imwrite("video_output.png", decode_image)
             else:
                 messagebox.showwarning("Not Supported", "Video decoding does not support " + selected_payload + " payloads")
@@ -108,6 +108,8 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         # Function to display image in label
         def display_input_image(file_path):
             img = cv2.imread(file_path)
+            if not isinstance(img, numpy.ndarray):
+                return
             img = image_resize(img, height=400)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(img)
