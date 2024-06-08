@@ -246,6 +246,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.decode_text_label = customtkinter.CTkLabel(self.decode_screen, text="Select file payload used in encoding process:", font=customtkinter.CTkFont(size=13, weight="bold"))
         self.decode_text_label.grid(row=2, column=0, padx=15, pady=5, sticky="w")
         self.decode_combobox = customtkinter.CTkComboBox(self.decode_screen,state="readonly", values=['Text', 'Image', 'Audio'], width=300, height=25)
+        self.decode_combobox.set('Text')
         self.decode_combobox.grid(row=3, column=0, columnspan=3, padx=15, pady=10, sticky="ew")
         self.selected_payload = self.decode_combobox.get()
 
