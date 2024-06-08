@@ -89,13 +89,13 @@ def decode_img(image_name, bit_length):
     return decoded_data
 
 
-input_image = "test.png"  #png file path
-output_image = "output.png"
-secret_data = "test" #text file path
-# encode the data into the image
-encoded_image = encode_img(image_name=input_image, secret_data=secret_data, bit_length=5)
-# save the output image (encoded image)
-cv2.imwrite(output_image, encoded_image)
-# decode the secret data from the image
-decoded_data = decode_img(output_image, 5)
-print("Decoded data:", decoded_data)
+# input_image = "test.png"  #png file path
+# output_image = "output.png"
+# secret_data = "test" #text file path
+# # encode the data into the image
+# encoded_image = encode_img(image_name=input_image, secret_data=secret_data, bit_length=5)
+# # save the output image (encoded image)
+# cv2.imwrite(output_image, encoded_image)
+# # decode the secret data from the image
+# decoded_data = decode_img(output_image, 5)
+# print("Decoded data:", decoded_data)

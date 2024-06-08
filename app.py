@@ -78,6 +78,12 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.bit_data = 1
 
         # Drag and Drop Method - Listbox: Get filepath to listbox (IMPT: Omit spaces in file path)
+        def drop_inside_decode_listbox(event, element):
+            element.delete("0", "end") # Clear previous data
+            file_path = event.data.strip("}{")
+            element.insert("end", file_path)
+            self.listbox_data = file_path
+
         def drop_inside_listbox(event, element):
             element.delete("0", "end") # Clear previous data
             file_path = event.data.strip("}{")
@@ -118,9 +124,8 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
             self.input_image_label.configure(image=img)
             self.input_image_label.image = img
 
-
         # Define Title, Window size and Grid layout
-        self.title("CSF Steganography Group --")
+        self.title("CSF Steganography Group 42")
         self.geometry("1280x800")
         # Configure Grid
         self.grid_rowconfigure(0, weight=1)
@@ -240,7 +245,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.decode_listb = tk.Listbox(self.decode_screen, selectmode=tk.SINGLE, background="#ffe0d6", width=50, height=2, font=20)
         self.decode_listb.grid(row=1, column=0, columnspan=2, padx=15, pady=10, sticky='ew')
         self.decode_listb.drop_target_register(DND_FILES)
-        self.decode_listb.dnd_bind("<<Drop>>", lambda event: drop_inside_listbox(event, element=self.decode_listb))
+        self.decode_listb.dnd_bind("<<Drop>>", lambda event: drop_inside_decode_listbox(event, element=self.decode_listb))
 
         # Dropdown box
         self.decode_text_label = customtkinter.CTkLabel(self.decode_screen, text="Select file payload used in encoding process:", font=customtkinter.CTkFont(size=13, weight="bold"))
