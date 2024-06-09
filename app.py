@@ -6,7 +6,9 @@ from tkinterdnd2 import DND_FILES, TkinterDnD
 from tkinter import messagebox
 from PIL import Image, ImageTk
 from img import image_resize,encode_img, decode_img
-from video import video_encryption,video_decryption,image_to_binary,binary_to_image
+from video import video_encryption,video_decryption
+import vlc
+import threading
 
 # Allow for TkDnD to utilise CTK
 class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
@@ -230,7 +232,123 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
         # VIDEO SCREEN (INSERT YOUR UI ELEMENTS HERE) [ALVIS & DANIEL]
         self.video_screen = customtkinter.CTkScrollableFrame(self, corner_radius=0, fg_color="transparent")
+        self.video_screen.grid_columnconfigure(0, weight=1)
+        
+        # VIDEO LABEL/DROPBOX
+        self.video_file_label = customtkinter.CTkLabel(self.video_screen, text="Drop video file here:", font=customtkinter.CTkFont(size=13, weight="bold"))
+        self.video_file_label.grid(row=0, column=0, padx=15, pady=5, sticky="w")
+        self.video_file_entry = tk.Entry(self.video_screen, width=10, font=20)
+        self.video_file_entry.grid(row=1, column=0, padx=15, pady=10, sticky="ew")  
+        self.video_file_entry.drop_target_register(DND_FILES)
+        self.video_file_entry.dnd_bind("<<Drop>>", self.drop_inside_entry)
+        
+        # PAYLOAD TEXTBOX
+        self.payload_label = customtkinter.CTkLabel(self.video_screen, text="Insert text file payload:", font=customtkinter.CTkFont(size=13, weight="bold"))  #gpt
+        self.payload_label.grid(row=0, column=1)  #gpt
+        self.payload_textbox = tk.Text(self.video_screen, width=70, height=10)  #gpt
+        self.payload_textbox.grid(row=1, column=1, padx=15, pady=10, sticky="ew")  #gpt
+        self.payload_textbox.drop_target_register(DND_FILES)  #gpt
+        self.payload_textbox.dnd_bind("<<Drop>>", self.drop_inside_textbox)  #gpt
+        
+        # VIDEO ENCODE BUTTON
+        self.encode_button = customtkinter.CTkButton(self.video_screen, text="Encode Text in Video", command=self.encode_video)
+        self.encode_button.grid(row=2, column=0, padx=15, pady=10)
+        
+        # VIDEO DECODE BUTTON
+        self.decode_button = customtkinter.CTkButton(self.video_screen, text="Decode Text from Video", command=self.decode_video)
+        self.decode_button.grid(row=2, column=1, padx=15, pady=10)
+        
+        # VLC PLAYER FOR PLAYING VIDEO
+        self.video_frame = tk.Frame(self.video_screen, bg='black', width=40, height=560)  
+        self.video_frame.grid(row=3, column=0, columnspan=2, padx=15, pady=10, sticky="ew")  
+        self.video_frame.grid_propagate(False)
+        
+        #PLAY/STOP BUTTON
+        self.play_button = customtkinter.CTkButton(self.video_screen, text="Play Video", command=self.play_video)
+        self.play_button.grid(row=4, column=0, padx=15, pady=10)  
+        self.stop_button = customtkinter.CTkButton(self.video_screen, text="Stop Video", command=self.stop_video)  
+        self.stop_button.grid(row=4, column=1, padx=15, pady=10)
+        
+        self.vlc_instance = vlc.Instance()
+        self.player = self.vlc_instance.media_player_new()
+        
+        
+    def drop_inside_entry(self, event):  
+        self.video_file_entry.delete(0, tk.END)  
+        self.video_file_entry.insert(0, event.data)  
 
+    def drop_inside_textbox(self, event):  
+        self.payload_textbox.delete("1.0", "end") 
+        file_path = event.data.strip("{}")  # Remove curly braces if present around the path
+        if file_path.endswith(".txt"):  
+            try:
+                with open(file_path, "r") as file:  
+                    content = file.read()  
+                    self.payload_textbox.insert("end", content)  
+            except Exception as e:
+                messagebox.showerror("Error", f"Could not read file: {e}")
+
+    def play_video(self):  
+        file_path = self.video_file_entry.get() 
+        if not file_path:  
+            messagebox.showerror("Error", "Please select a video file to play.") 
+            return  
+
+        file_path = os.path.abspath(file_path)
+        print(f"Attempting to play video: {file_path}")  
+
+        def play_thread(): 
+            try:  
+                media = self.vlc_instance.media_new(file_path) 
+                self.player.set_media(media) 
+                self.player.set_hwnd(self.video_frame.winfo_id()) 
+                self.player.play()  
+            except Exception as e:  
+                print(f"Error playing video: {e}")  
+                messagebox.showerror("Error", f"Failed to play video: {e}")  
+
+        threading.Thread(target=play_thread).start()  
+
+    def stop_video(self):  
+        self.player.stop() 
+        
+    def encode_video(self):  
+        video_file = self.video_file_entry.get()  
+        if not video_file:  
+            messagebox.showerror("Error", "Please select a video file.")  
+            return  
+
+        text = self.payload_textbox.get("1.0", "end").strip()  
+        if not text:  
+            messagebox.showerror("Error", "Please insert text payload.") 
+            return 
+
+        bit_length = int(self.bit_slider.get())  # Ensure bit_length is an integer 
+        try:  
+            video_encryption(video_file, text, bit_length)  
+            messagebox.showinfo("Success", "Text encoded successfully into video.")  
+        except Exception as e:  
+            messagebox.showerror("Error", f"Failed to encode text: {e}")  
+
+    def decode_video(self):  
+        video_file = self.video_file_entry.get()  
+        if not video_file:  
+            messagebox.showerror("Error", "Please select a video file.")  
+            return  
+
+        bit_length = int(self.bit_slider.get())  # Ensure bit_length is an integer 
+        try:  
+            text = video_decryption(video_file, bit_length)  
+            self.payload_textbox.delete("1.0", "end")  
+            self.payload_textbox.insert("end", text)  
+            messagebox.showinfo("Decoded Text", text)  
+        except Exception as e:  
+            messagebox.showerror("Error", f"Failed to decode text: {e}") 
+        
+        # Select default frame - VIDEO
+        self.select_frame_by_name("video_screen") 
+        
+        
         # AUDIO SCREEN (INSERT YOUR UI ELEMENTS HERE) [SHIFA & JING YI]
         self.audio_screen = customtkinter.CTkScrollableFrame(self, corner_radius=0, fg_color="transparent")
 
@@ -298,6 +416,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         else:
             self.decode_screen.grid_forget()
 
+    
     def image_screen_button_event(self):
         self.select_frame_by_name("image_screen")
 
