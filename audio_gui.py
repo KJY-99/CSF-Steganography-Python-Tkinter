@@ -4,17 +4,20 @@ from tkinterdnd2 import DND_FILES, TkinterDnD
 from audio_steganography import encode_wav, decode_wav
 import wave
 import pyaudio
-import threading
+import threading, os
 
 def play_audio(file_path):
     if not file_path:
         messagebox.showerror("Error", "Please select a file to play.")
         return
-
+    file_path = os.path.abspath(file_path)
+    
     def play_thread():
         chunk = 1024
         try:
-            wf = wave.open(file_path, 'rb')
+            if file_path.lower().endswith('.wav'):
+                wf = wave.open(file_path, 'rb')
+            
         except Exception as e:
             messagebox.showerror("Error", "Failed to open audio file: File selected is not a .wav file.")
             return
@@ -88,6 +91,9 @@ def decode_file():
         messagebox.showinfo("Decoded Text", text)
     except Exception as e:
         messagebox.showerror("Error", f"Failed to decode text: {e}")
+        
+    root.event_generate("<<UsedecodeFunction>>", data=(stego_file, num_lsb))
+
 
 def on_drag_files(event, entry):
     file_path = event.data.strip('{}')
