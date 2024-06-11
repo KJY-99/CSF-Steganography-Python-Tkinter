@@ -86,6 +86,30 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
     def stop_video(self):  
         self.player.stop() 
 
+    def play_encoded_video(self):  
+        file_path = "output_video.avi"
+        if not file_path:  
+            messagebox.showerror("Error", "Please encode a video file to play.") 
+            return  
+
+        file_path = os.path.abspath(file_path)
+        print(f"Attempting to play video: {file_path}")  
+
+        def play_thread(): 
+            try:  
+                media = self.vlc_instance.media_new(file_path) 
+                self.encoded_player.set_media(media) 
+                self.encoded_player.set_hwnd(self.encoded_video_frame.winfo_id()) 
+                self.encoded_player.play()  
+            except Exception as e:  
+                print(f"Error playing video: {e}")  
+                messagebox.showerror("Error", f"Failed to play video: {e}")  
+
+        threading.Thread(target=play_thread).start()  
+
+    def stop_encoded_video(self):  
+        self.encoded_player.stop() 
+
     def play_audio(self):
         file_path = self.audio_file_entry.get()
         if not file_path:
@@ -398,19 +422,30 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.encode_button.grid(row=2, column=0, padx=15, pady=10)
 
         # VLC PLAYER FOR PLAYING VIDEO
-        self.video_frame = tk.Frame(self.video_screen, bg='black', width=40, height=560)  
+        self.video_frame = tk.Frame(self.video_screen, bg='white', width=40, height=560)  
         self.video_frame.grid(row=3, column=0, columnspan=2, padx=15, pady=10, sticky="ew")  
         self.video_frame.grid_propagate(False)
-        
+
+        self.encoded_video_frame = tk.Frame(self.video_screen, bg='black', width=40, height=560)  
+        self.encoded_video_frame.grid(row=3, column=1, columnspan=2, padx=15, pady=10, sticky="ew")  
+        self.encoded_video_frame.grid_propagate(False)
+
         #PLAY/STOP BUTTON
-        self.play_button = customtkinter.CTkButton(self.video_screen, text="Play Video", command=self.play_video)
+        self.play_button = customtkinter.CTkButton(self.video_screen, text="Play Cover Video", command=self.play_video)
         self.play_button.grid(row=4, column=0, padx=15, pady=10)  
-        self.stop_button = customtkinter.CTkButton(self.video_screen, text="Stop Video", command=self.stop_video)  
-        self.stop_button.grid(row=4, column=1, padx=15, pady=10)
+        self.stop_button = customtkinter.CTkButton(self.video_screen, text="Stop Cover Video", command=self.stop_video)  
+        self.stop_button.grid(row=5, column=0, padx=15, pady=10)
         
+        self.play_encoded_button = customtkinter.CTkButton(self.video_screen, text="Play Encoded Video", command=self.play_encoded_video)
+        self.play_encoded_button.grid(row=4, column=1, padx=15, pady=10)  
+        self.stop_encoded_button = customtkinter.CTkButton(self.video_screen, text="Stop Encoded Video", command=self.stop_encoded_video)  
+        self.stop_encoded_button.grid(row=5, column=1, padx=15, pady=10)
+
         self.vlc_instance = vlc.Instance()
         self.player = self.vlc_instance.media_player_new()
         
+        self.encoded_vlc_instance = vlc.Instance()
+        self.encoded_player = self.encoded_vlc_instance.media_player_new()
         # AUDIO SCREEN (INSERT YOUR UI ELEMENTS HERE) [SHIFA & JING YI]
         self.audio_screen = customtkinter.CTkScrollableFrame(self, corner_radius=0, fg_color="transparent")
         self.audio_screen.grid_columnconfigure(0, weight=1)
