@@ -7,8 +7,11 @@ from tkinter import messagebox
 from PIL import Image, ImageTk
 from img import image_resize,encode_img, decode_img
 from video import video_encryption,video_decryption,image_to_binary,binary_to_image
+from audio_steganography import encode_wav, decode_wav
 import vlc
 import threading
+import wave, pydub, pygame
+from pygame import mixer
 
 # Allow for TkDnD to utilise CTK
 class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
@@ -83,6 +86,87 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
     def stop_video(self):  
         self.player.stop() 
 
+        def play_audio(self):
+        file_path = self.audio_file_entry.get()
+        if not file_path:
+            messagebox.showerror("Error", "Please select an audio file to play.")
+            return
+
+        def play_thread():
+            try:
+                mixer.init()
+                mixer.music.load(file_path)
+                mixer.music.play()
+
+                while mixer.music.get_busy():
+                    continue
+
+                mixer.quit()
+            except pygame.error as e:
+                messagebox.showerror("Error", f"Failed to play audio file: {e}")
+
+        threading.Thread(target=play_thread).start()
+
+    def stop_audio(self):
+        if pygame.mixer.music.get_busy():
+            pygame.mixer.music.stop()
+    
+    def play_encoded_audio(self):
+        file_path = 'encoded.wav'
+        if not file_path:
+            messagebox.showerror("Error", "Please select an audio file to play.")
+            return
+
+        def play_thread():
+            try:
+                mixer.init()
+                mixer.music.load(file_path)
+                mixer.music.play()
+
+                while mixer.music.get_busy():
+                    continue
+
+                mixer.quit()
+            except pygame.error as e:
+                messagebox.showerror("Error", f"Failed to play audio file: {e}")
+
+        threading.Thread(target=play_thread).start()
+
+
+    def encode_audio(self):
+        cover_file = self.audio_file_entry.get()
+        # payload_file = self.payload_file_entry.get("1.0", "end")
+
+        if not cover_file or not os.path.exists(cover_file):
+            messagebox.showerror("Error", "Invalid file path or file does not exist.")
+            return
+        cover_file = os.path.abspath(cover_file)
+        if not self.payload_audio_textbox.get(1.0, "end-1c"):  # Check if textbox_data is empty or contains only whitespace
+            messagebox.showerror("Error", " No text file added.")
+            return
+        
+        num_lsb = self.audio_bit_data  # Ensure bit_length is an integer 
+        try:  
+            encode_wav(cover_file, self.payload_audio_textbox.get(1.0, "end-1c"), num_lsb)  
+            messagebox.showinfo("Success", "Text encoded successfully into audio.")  
+        except Exception as e:  
+            messagebox.showerror("Error", f"Failed to encode text: {e}")  
+
+    def decode_file(self):
+        stego_file = self.decode_listb.get(tk.ACTIVE)
+
+        if not stego_file:
+            messagebox.showerror("Error", "Please select the encoded .wav file")
+            return
+        num_lsb = self.audio_bit_data
+            
+        try:
+            text = decode_wav(stego_file, num_lsb)
+            messagebox.showinfo("Decoded Text", text)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to decode text: {e}")
+
+
     def usedecodefunction(self):
         # Retrieve the selected bit value
         bit_value = self.decode_bit_value
@@ -110,8 +194,26 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
                 cv2.imwrite("video_output.png", decode_image)
             else:
                 messagebox.showwarning("Not Supported", "Video decoding does not support " + selected_payload + " payloads")
+        elif decode_filepath.endswith('wav'):
+            if selected_payload == "Text":
+                try:
+                    text = decode_wav(decode_filepath, bit_value)
+                    self.decode_output_label.configure(text=text)
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to decode text: {e}")
+            else:
+                messagebox.showwarning("Not Supported", "Audio decoding does not support " + selected_payload + " payloads")
         else:
             messagebox.showwarning("Invalid Type", "Accepted cover : .png, .wav, .avi")
+    def handle_decode_function(self, event):
+            stego_file, num_lsb = event.data
+            self.decode_bit_value = num_lsb
+            self.decode_combobox.set("Text")
+            self.decode_listb.insert(tk.END, stego_file)
+            self.usedecodefunction()
+            self.current_screen = "image_screen"
+    
+
     def __init__(self):
         super().__init__()
 
@@ -120,11 +222,15 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.listbox_data = ""
         self.decode_bit_value = 1
         self.bit_data = 1
-        self.current_screen = "image_screen"
+        self.audio_bit_data = 1
+
+        self.bind("<<UsedecodeFunction>>", self.handle_decode_function)
+
+        
         # Drag and Drop Method - Listbox: Get filepath to listbox (IMPT: Omit spaces in file path)
         def drop_inside_listbox(event, element):
             element.delete("0", "end") # Clear previous data
-            file_path = event.data.strip("}{")
+            file_path = event.data.strip("{}")
             element.insert("end", file_path)
             self.listbox_data = file_path
             display_input_image(file_path)
@@ -144,10 +250,17 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
             self.slider_label.configure(text="Selected number of bits: "+str(int(value)))
             self.bit_data = int(value)
 
+        def audio_slider_event(value):
+            self.audio_slider_label.configure(text="Selected number of bits: "+str(int(value)))
+            self.audio_bit_data = int(value)
+
+
         # Decode slider
         def decode_slider_event(value):
             self.decode_slider_label.configure(text="Selected number of bits for decoding: "+str(int(value)))
             self.decode_bit_value = int(value)
+
+        
 
         # Function to display image in label
         def display_input_image(file_path):
@@ -308,6 +421,52 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         
         # AUDIO SCREEN (INSERT YOUR UI ELEMENTS HERE) [SHIFA & JING YI]
         self.audio_screen = customtkinter.CTkScrollableFrame(self, corner_radius=0, fg_color="transparent")
+        self.audio_screen.grid_columnconfigure(0, weight=1)
+        
+        # PAYLOAD TEXTBOX
+        self.audio_text_label = customtkinter.CTkLabel(self.audio_screen, text="Insert text file payload:", font=customtkinter.CTkFont(size=13, weight="bold"))
+        self.audio_text_label.grid(row=0, column=1)
+        self.payload_audio_textbox = tk.Text(self.audio_screen, width=70, height=10) 
+        self.payload_audio_textbox.grid(row=1, column=1, padx=15, pady=10, sticky="ew") 
+        self.payload_audio_textbox.drop_target_register(DND_FILES)
+        self.payload_audio_textbox.dnd_bind("<<Drop>>", lambda event: drop_inside_textbox(event, element=self.payload_audio_textbox))
+
+        # AUDIO LABEL/DROPBOX
+        self.audio_file_label = customtkinter.CTkLabel(self.audio_screen, text="Drop audio file here:", font=customtkinter.CTkFont(size=13, weight="bold"))
+        self.audio_file_label.grid(row=0, column=0, padx=15, pady=5, sticky="w")
+        self.audio_file_entry = tk.Entry(self.audio_screen, width=10, font=20)
+        self.audio_file_entry.grid(row=1, column=0, padx=15, pady=10, sticky="ew")  
+        self.audio_file_entry.drop_target_register(DND_FILES)
+        self.audio_file_entry.dnd_bind("<<Drop>>", lambda event: drop_inside_listbox(event, element=self.audio_file_entry))
+        
+
+        # Bit Selection Slider
+        bit_value = tk.IntVar()
+        self.audio_slider_label = customtkinter.CTkLabel(self.audio_screen, text="Selected number of bits: 1", font=customtkinter.CTkFont(size=13, weight="bold"))
+        self.audio_slider_label.grid(row=4, column=0, padx=15, pady=(10, 0), sticky="ew")
+        self.audio_bit_slider = customtkinter.CTkSlider(self.audio_screen, from_=1, to=8, number_of_steps=7, command=audio_slider_event, variable=bit_value)
+        self.audio_bit_slider.grid(row=5, column=0, columnspan=1, padx=15, pady=5, sticky="ew")
+
+        #PLAY AUDIO BUTTON
+        self.play_button = customtkinter.CTkButton(self.audio_screen, text="Play Cover Audio", command=self.play_audio)
+        self.play_button.grid(row=2, column=0, padx=15, pady=10) 
+
+        #PLAY ENCODED AUDIO BUTTON
+        self.play_button = customtkinter.CTkButton(self.audio_screen, text="Play Encoded Audio", command=self.play_encoded_audio)
+        self.play_button.grid(row=7, column=0, padx=15, pady=10) 
+
+        #STOP AUDIO BUTTON
+        self.stop_button = customtkinter.CTkButton(self.audio_screen, text="Stop Cover Audio", command=self.stop_audio)
+        self.stop_button.grid(row=3, column=0, padx=15, pady=10)
+
+        #STOP AUDIO BUTTON
+        self.stop_button = customtkinter.CTkButton(self.audio_screen, text="Stop Encoded Cover Audio", command=self.stop_audio)
+        self.stop_button.grid(row=8, column=0, padx=15, pady=10)
+
+        # AUDIO ENCODE BUTTON
+        self.audio_encode_button = customtkinter.CTkButton(self.audio_screen, text="Encode Text in Audio", command=self.encode_audio)
+        self.audio_encode_button.grid(row=2, column=1, padx=15, pady=10)
+
 
         # DECODE SCREEN (USED FOR ALL FORMATS OF DECODING)
         self.decode_screen = customtkinter.CTkScrollableFrame(self, corner_radius=0, fg_color="transparent")
