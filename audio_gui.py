@@ -92,7 +92,6 @@ def decode_file():
     except Exception as e:
         messagebox.showerror("Error", f"Failed to decode text: {e}")
         
-    root.event_generate("<<UsedecodeFunction>>", data=(stego_file, num_lsb))
 
 
 def on_drag_files(event, entry):
