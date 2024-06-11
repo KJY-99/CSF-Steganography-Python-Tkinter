@@ -86,7 +86,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
     def stop_video(self):  
         self.player.stop() 
 
-        def play_audio(self):
+    def play_audio(self):
         file_path = self.audio_file_entry.get()
         if not file_path:
             messagebox.showerror("Error", "Please select an audio file to play.")
