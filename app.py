@@ -15,15 +15,18 @@ from pygame import mixer
 class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
     def image_encode_and_display(self):
-        if not self.listbox_data:
+        if not self.listb:
             messagebox.showerror("Error", "No image file added.")
             return
         if not self.tbox.get(1.0, "end-1c"):  # Check if textbox_data is empty or contains only whitespace
             messagebox.showerror("Error", " No text file added.")
             return
+        if not self.listb.get(tk.ACTIVE).endswith(('jpg', 'png')):
+            messagebox.showerror("Error", "Please insert a png or jpg image file.")
+            return
         try:
             # Call the encode function with the appropriate arguments
-            encoded_image = encode_img(self.listbox_data, self.tbox.get(1.0, "end-1c"), self.bit_data)
+            encoded_image = encode_img(self.listb.get(tk.ACTIVE), self.tbox.get(1.0, "end-1c"), self.bit_data)
 
             # Convert the encoded image to a format Tkinter can display
             resized_encoded_image = image_resize(encoded_image, height=400)
