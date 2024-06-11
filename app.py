@@ -1,15 +1,13 @@
 import customtkinter
 import tkinter as tk
-import os, cv2
-import numpy
 from tkinterdnd2 import DND_FILES, TkinterDnD
 from tkinter import messagebox
+import os, cv2, numpy
 from PIL import Image, ImageTk
-from img import image_resize,encode_img, decode_img
+from img import image_resize, encode_img, decode_img
 from video import video_encryption,video_decryption,image_to_binary,binary_to_image
 from audio_steganography import encode_wav, decode_wav
-import vlc
-import threading
+import vlc, threading
 import wave, pydub, pygame
 from pygame import mixer
 
@@ -52,7 +50,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
         text = self.payload_textbox.get("1.0", "end").strip()  
         if not text:  
-            messagebox.showerror("Error", "Please insert text payload.") 
+            messagebox.showerror("Error", "Please insert a text payload.") 
             return 
 
         bit_length = int(self.bit_slider.get())  # Ensure bit_length is an integer 
@@ -236,12 +234,11 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         # Define TkDnD ver.
         self.TkdndVersion = TkinterDnD._require(self)
         self.listbox_data = ""
-        self.decode_bit_value = 1
         self.bit_data = 1
         self.audio_bit_data = 1
+        self.video_bit_data = 1
+        self.decode_bit_value = 1
         self.current_screen = "image_screen"
-    
-
         
         # Drag and Drop Method - Listbox: Get filepath to listbox (IMPT: Omit spaces in file path)
         def drop_inside_listbox(event, element):
@@ -266,17 +263,18 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
             self.slider_label.configure(text="Selected number of bits: "+str(int(value)))
             self.bit_data = int(value)
 
+        def video_slider_event(value):
+            self.video_slider_label.configure(text="Selected number of bits: "+str(int(value)))
+            self.video_bit_data = int(value)
+
         def audio_slider_event(value):
             self.audio_slider_label.configure(text="Selected number of bits: "+str(int(value)))
             self.audio_bit_data = int(value)
-
 
         # Decode slider
         def decode_slider_event(value):
             self.decode_slider_label.configure(text="Selected number of bits for decoding: "+str(int(value)))
             self.decode_bit_value = int(value)
-
-        
 
         # Function to display image in label
         def display_input_image(file_path):
@@ -292,7 +290,6 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
                 self.input_image_label.configure(image=img)
                 self.input_image_label.image = img
             
-
         # Define Title, Window size and Grid layout
         self.title("CSF Steganography Group 42")
         self.geometry("1280x800")
@@ -373,7 +370,6 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.listb.drop_target_register(DND_FILES)
         self.listb.dnd_bind("<<Drop>>", lambda event: drop_inside_listbox(event, element=self.listb))
 
-
         # Bit Selection Slider
         bit_value = tk.IntVar()
         self.slider_label = customtkinter.CTkLabel(self.image_screen, text="Selected number of bits: 1", font=customtkinter.CTkFont(size=13, weight="bold"))
@@ -397,44 +393,52 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.output_image_label = customtkinter.CTkLabel(self.image_screen, text="", image=None)
         self.output_image_label.grid(row=7, column=1, padx=15, pady=5, sticky="ew")
 
-        # VIDEO SCREEN (INSERT YOUR UI ELEMENTS HERE) [ALVIS & DANIEL]
+        # VIDEO SCREEN
         self.video_screen = customtkinter.CTkScrollableFrame(self, corner_radius=0, fg_color="transparent")
         self.video_screen.grid_columnconfigure(0, weight=1)
-        
-        # VIDEO LABEL/DROPBOX
-        self.video_file_label = customtkinter.CTkLabel(self.video_screen, text="Drop video file here:", font=customtkinter.CTkFont(size=13, weight="bold"))
-        self.video_file_label.grid(row=0, column=0, padx=15, pady=5, sticky="w")
-        self.video_file_entry = tk.Entry(self.video_screen, width=10, font=20)
-        self.video_file_entry.grid(row=1, column=0, padx=15, pady=10, sticky="ew")  
-        self.video_file_entry.drop_target_register(DND_FILES)
-        self.video_file_entry.dnd_bind("<<Drop>>", lambda event: drop_inside_listbox(event, element=self.video_file_entry))
-        
-        # PAYLOAD TEXTBOX
+        self.video_screen.grid_columnconfigure(1, weight=1)
+
+        # Payload textbox
         self.payload_label = customtkinter.CTkLabel(self.video_screen, text="Insert text file payload:", font=customtkinter.CTkFont(size=13, weight="bold"))
-        self.payload_label.grid(row=0, column=1)
-        self.payload_textbox = tk.Text(self.video_screen, width=70, height=10) 
-        self.payload_textbox.grid(row=1, column=1, padx=15, pady=10, sticky="ew") 
+        self.payload_label.grid(row=0, column=0, padx=15, pady=5, sticky="w")
+        self.payload_textbox = tk.Text(self.video_screen, width=70, height=25) 
+        self.payload_textbox.grid(row=1, column=0, columnspan=2, padx=15, pady=10, sticky="ew") 
         self.payload_textbox.drop_target_register(DND_FILES)
         self.payload_textbox.dnd_bind("<<Drop>>", lambda event: drop_inside_textbox(event, element=self.payload_textbox))
         
-        # VIDEO ENCODE BUTTON
-        self.encode_button = customtkinter.CTkButton(self.video_screen, text="Encode Text in Video", command=self.encode_video)
-        self.encode_button.grid(row=2, column=0, padx=15, pady=10)
+        # Video listbox
+        self.video_file_label = customtkinter.CTkLabel(self.video_screen, text="Drop video file here:", font=customtkinter.CTkFont(size=13, weight="bold"))
+        self.video_file_label.grid(row=2, column=0, padx=15, pady=5, sticky="w")
+        self.video_file_entry = tk.Listbox(self.video_screen, font=20, background="#ffe0d6", width=50, height=2)
+        self.video_file_entry.grid(row=3, column=0, columnspan=2, padx=15, pady=10, sticky="ew")  
+        self.video_file_entry.drop_target_register(DND_FILES)
+        self.video_file_entry.dnd_bind("<<Drop>>", lambda event: drop_inside_listbox(event, element=self.video_file_entry))
 
-        # VLC PLAYER FOR PLAYING VIDEO
-        self.video_frame = tk.Frame(self.video_screen, bg='white', width=40, height=560)  
-        self.video_frame.grid(row=3, column=0, columnspan=2, padx=15, pady=10, sticky="ew")  
+        # Bit Selection Slider
+        bit_value = tk.IntVar()
+        self.video_slider_label = customtkinter.CTkLabel(self.video_screen, text="Selected number of bits: 1", font=customtkinter.CTkFont(size=13, weight="bold"))
+        self.video_slider_label.grid(row=4, column=0, padx=15, pady=(10, 0), sticky="ew")
+        self.video_bit_slider = customtkinter.CTkSlider(self.video_screen, from_=1, to=8, number_of_steps=7, command=video_slider_event, variable=bit_value)
+        self.video_bit_slider.grid(row=5, column=0, columnspan=1, padx=15, pady=5, sticky="ew")
+
+        # Video encode button
+        self.encode_button = customtkinter.CTkButton(self.video_screen, text="Encode", command=self.encode_video)
+        self.encode_button.grid(row=5, column=1, columnspan=1, padx=15, pady=10, sticky="ew")
+
+        # Vlc player for video
+        self.video_frame = tk.Frame(self.video_screen, bg='black', width=40, height=560)  
+        self.video_frame.grid(row=6, column=0, columnspan=1, padx=15, pady=10, sticky="ew")  
         self.video_frame.grid_propagate(False)
 
         self.encoded_video_frame = tk.Frame(self.video_screen, bg='black', width=40, height=560)  
-        self.encoded_video_frame.grid(row=3, column=1, columnspan=2, padx=15, pady=10, sticky="ew")  
+        self.encoded_video_frame.grid(row=6, column=1, columnspan=1, padx=15, pady=10, sticky="ew")  
         self.encoded_video_frame.grid_propagate(False)
-
-        #PLAY/STOP BUTTON
-        self.play_button = customtkinter.CTkButton(self.video_screen, text="Play Cover Video", command=self.play_video)
-        self.play_button.grid(row=4, column=0, padx=15, pady=10)  
-        self.stop_button = customtkinter.CTkButton(self.video_screen, text="Stop Cover Video", command=self.stop_video)  
-        self.stop_button.grid(row=5, column=0, padx=15, pady=10)
+        
+        # Play / Stop button
+        self.play_button = customtkinter.CTkButton(self.video_screen, text="Play Video", command=self.play_video)
+        self.play_button.grid(row=7, column=0, columnspan=1, padx=15, pady=10)  
+        self.stop_button = customtkinter.CTkButton(self.video_screen, text="Stop Video", command=self.stop_video)  
+        self.stop_button.grid(row=7, column=1, columnspan=1, padx=15, pady=10)
         
         self.play_encoded_button = customtkinter.CTkButton(self.video_screen, text="Play Encoded Video", command=self.play_encoded_video)
         self.play_encoded_button.grid(row=4, column=1, padx=15, pady=10)  
@@ -443,29 +447,29 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
         self.vlc_instance = vlc.Instance()
         self.player = self.vlc_instance.media_player_new()
-        
         self.encoded_vlc_instance = vlc.Instance()
         self.encoded_player = self.encoded_vlc_instance.media_player_new()
+
         # AUDIO SCREEN (INSERT YOUR UI ELEMENTS HERE) [SHIFA & JING YI]
         self.audio_screen = customtkinter.CTkScrollableFrame(self, corner_radius=0, fg_color="transparent")
         self.audio_screen.grid_columnconfigure(0, weight=1)
-        
-        # PAYLOAD TEXTBOX
+        self.audio_screen.grid_columnconfigure(1, weight=1)
+
+        # Payload textbox
         self.audio_text_label = customtkinter.CTkLabel(self.audio_screen, text="Insert text file payload:", font=customtkinter.CTkFont(size=13, weight="bold"))
-        self.audio_text_label.grid(row=0, column=1)
-        self.payload_audio_textbox = tk.Text(self.audio_screen, width=70, height=10) 
-        self.payload_audio_textbox.grid(row=1, column=1, padx=15, pady=10, sticky="ew") 
+        self.audio_text_label.grid(row=0, column=0, columnspan=2, padx=15, pady=5, sticky="w")
+        self.payload_audio_textbox = tk.Text(self.audio_screen, width=70, height=25)
+        self.payload_audio_textbox.grid(row=1, column=0, columnspan=2, padx=15, pady=10, sticky="nesw")
         self.payload_audio_textbox.drop_target_register(DND_FILES)
         self.payload_audio_textbox.dnd_bind("<<Drop>>", lambda event: drop_inside_textbox(event, element=self.payload_audio_textbox))
 
-        # AUDIO LABEL/DROPBOX
+        # Audio label dropbox
         self.audio_file_label = customtkinter.CTkLabel(self.audio_screen, text="Drop audio file here:", font=customtkinter.CTkFont(size=13, weight="bold"))
-        self.audio_file_label.grid(row=0, column=0, padx=15, pady=5, sticky="w")
-        self.audio_file_entry = tk.Entry(self.audio_screen, width=10, font=20)
-        self.audio_file_entry.grid(row=1, column=0, padx=15, pady=10, sticky="ew")  
+        self.audio_file_label.grid(row=2, column=0, columnspan=2, padx=15, pady=5, sticky="w")
+        self.audio_file_entry = tk.Listbox(self.audio_screen, background="#ffe0d6", width=50, height=2, font=20)
+        self.audio_file_entry.grid(row=3, column=0, columnspan=2, padx=15, pady=10, sticky="nesw")  
         self.audio_file_entry.drop_target_register(DND_FILES)
         self.audio_file_entry.dnd_bind("<<Drop>>", lambda event: drop_inside_listbox(event, element=self.audio_file_entry))
-        
 
         # Bit Selection Slider
         bit_value = tk.IntVar()
@@ -474,25 +478,21 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.audio_bit_slider = customtkinter.CTkSlider(self.audio_screen, from_=1, to=8, number_of_steps=7, command=audio_slider_event, variable=bit_value)
         self.audio_bit_slider.grid(row=5, column=0, columnspan=1, padx=15, pady=5, sticky="ew")
 
-        #PLAY AUDIO BUTTON
+        # Audio Encode Button
+        self.audio_encode_button = customtkinter.CTkButton(self.audio_screen, text="Encode", command=self.encode_audio)
+        self.audio_encode_button.grid(row=5, column=1, columnspan=1, padx=15, pady=5, sticky="ew")
+
+        # Play/stop Audio Button
         self.play_button = customtkinter.CTkButton(self.audio_screen, text="Play Cover Audio", command=self.play_audio)
-        self.play_button.grid(row=2, column=0, padx=15, pady=10) 
-
-        #PLAY ENCODED AUDIO BUTTON
-        self.play_button = customtkinter.CTkButton(self.audio_screen, text="Play Encoded Audio", command=self.play_encoded_audio)
-        self.play_button.grid(row=7, column=0, padx=15, pady=10) 
-
-        #STOP AUDIO BUTTON
+        self.play_button.grid(row=6, column=0, padx=15, pady=10) 
         self.stop_button = customtkinter.CTkButton(self.audio_screen, text="Stop Cover Audio", command=self.stop_audio)
-        self.stop_button.grid(row=3, column=0, padx=15, pady=10)
+        self.stop_button.grid(row=7, column=0, padx=15, pady=10)
 
-        #STOP AUDIO BUTTON
+        # Play/stop Encoded Audio Button
+        self.play_button = customtkinter.CTkButton(self.audio_screen, text="Play Encoded Audio", command=self.play_encoded_audio)
+        self.play_button.grid(row=6, column=1, padx=15, pady=10) 
         self.stop_button = customtkinter.CTkButton(self.audio_screen, text="Stop Encoded Cover Audio", command=self.stop_audio)
-        self.stop_button.grid(row=8, column=0, padx=15, pady=10)
-
-        # AUDIO ENCODE BUTTON
-        self.audio_encode_button = customtkinter.CTkButton(self.audio_screen, text="Encode Text in Audio", command=self.encode_audio)
-        self.audio_encode_button.grid(row=2, column=1, padx=15, pady=10)
+        self.stop_button.grid(row=7, column=1, padx=15, pady=10)
 
 
         # DECODE SCREEN (USED FOR ALL FORMATS OF DECODING)
