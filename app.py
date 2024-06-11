@@ -135,7 +135,6 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
     def encode_audio(self):
         cover_file = self.audio_file_entry.get()
-        # payload_file = self.payload_file_entry.get("1.0", "end")
 
         if not cover_file or not os.path.exists(cover_file):
             messagebox.showerror("Error", "Invalid file path or file does not exist.")
@@ -205,13 +204,6 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
                 messagebox.showwarning("Not Supported", "Audio decoding does not support " + selected_payload + " payloads")
         else:
             messagebox.showwarning("Invalid Type", "Accepted cover : .png, .wav, .avi")
-    def handle_decode_function(self, event):
-            stego_file, num_lsb = event.data
-            self.decode_bit_value = num_lsb
-            self.decode_combobox.set("Text")
-            self.decode_listb.insert(tk.END, stego_file)
-            self.usedecodefunction()
-            self.current_screen = "image_screen"
     
 
     def __init__(self):
@@ -223,8 +215,8 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.decode_bit_value = 1
         self.bit_data = 1
         self.audio_bit_data = 1
-
-        self.bind("<<UsedecodeFunction>>", self.handle_decode_function)
+        self.current_screen = "image_screen"
+    
 
         
         # Drag and Drop Method - Listbox: Get filepath to listbox (IMPT: Omit spaces in file path)
