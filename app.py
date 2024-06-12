@@ -50,16 +50,24 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         if not video_file:  
             messagebox.showerror("Error", "Please select a video file.")
             return
-
+        if not video_file.endswith(('avi', 'mp4')):
+            messagebox.showerror("Error", "Please insert a avi or mp4 image file.")
+            return
         text = self.payload_textbox.get("1.0", "end").strip()
         if not text:
-            messagebox.showerror("Error", "Please insert a text payload.")
+            messagebox.showerror("Error", "Please insert a payload.")
             return 
+        if text.endswith(('jpg', 'png')):
+            try:
+                text = image_to_binary(text)
+            except Exception as e:  
+                messagebox.showerror("Error", f"Failed to encode image, please ensure proper filepath")
+                return
 
-        bit_length = int(self.bit_slider.get())  # Ensure bit_length is an integer 
+        bit_length = int(self.video_bit_slider.get())  # Ensure bit_length is an integer 
         try:  
             video_encryption(video_file, text, bit_length)  
-            messagebox.showinfo("Success", "Text encoded successfully into video.")  
+            messagebox.showinfo("Success", "Payload encoded successfully into video.")  
         except Exception as e:  
             messagebox.showerror("Error", f"Failed to encode text: {e}")  
             
@@ -164,6 +172,9 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         if not cover_file or not os.path.exists(cover_file):
             messagebox.showerror("Error", "Invalid file path or file does not exist.")
             return
+        if not cover_file.endswith(('wav', 'mp3')):
+            messagebox.showerror("Error", "Please insert a wav or mp3 image file.")
+            return
         cover_file = os.path.abspath(cover_file)
         if not self.payload_audio_textbox.get(1.0, "end-1c"):  # Check if textbox_data is empty or contains only whitespace
             messagebox.showerror("Error", " No text file added.")
@@ -192,6 +203,9 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
 
     def usedecodefunction(self):
+        # delete previous displays
+        self.decode_output_label.configure(text="",image="")
+        
         # Retrieve the selected bit value
         bit_value = self.decode_bit_data
 
@@ -201,16 +215,32 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         decode_filepath = self.decode_listb.get(tk.ACTIVE)
         if decode_filepath.endswith(('jpg', 'png')):
             if selected_payload == "Text":
-                decode_data = decode_img(decode_filepath, bit_value)
+                try:
+                    decode_data = decode_img(decode_filepath, bit_value)
+                except Exception as e:
+                    messagebox.showerror("Error", f"{e}")
+                    return
                 self.decode_output_label.configure(text=decode_data)
             else:
                 messagebox.showwarning("Not Supported", "Image decoding does not support " + selected_payload + " payloads")
         elif decode_filepath.endswith('avi'):
-            decode_data = video_decryption(decode_filepath, bit_value)
+            try:
+                decode_data = video_decryption(decode_filepath, bit_value)
+            except Exception as e:
+                messagebox.showerror("Error", f"{e}")
+                return
+
             if selected_payload == "Text":
+                if decode_data[1:4] == "PNG":
+                    messagebox.showerror("Error", "Image file has been encoded, please change type of payload")
+                    return
                 self.decode_output_label.configure(text=decode_data)
             elif selected_payload == "Image":
-                decode_image  = binary_to_image(decode_data)
+                try:
+                    decode_image  = binary_to_image(decode_data)
+                except Exception as e:
+                    messagebox.showerror("Error", f"{e}")
+                    return
                 resized_decoded_image = image_resize(decode_image, height=400)
                 resized_decoded_image_pil = Image.fromarray(cv2.cvtColor(resized_decoded_image, cv2.COLOR_BGR2RGB))
                 resized_decoded_image_tk = ImageTk.PhotoImage(resized_decoded_image_pil)
@@ -218,6 +248,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
                 cv2.imwrite("video_output.png", decode_image)
             else:
                 messagebox.showwarning("Not Supported", "Video decoding does not support " + selected_payload + " payloads")
+                return
         elif decode_filepath.endswith('wav'):
             if selected_payload == "Text":
                 try:
@@ -225,10 +256,13 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
                     self.decode_output_label.configure(text=text)
                 except Exception as e:
                     messagebox.showerror("Error", f"Failed to decode text: {e}")
+                    return
             else:
                 messagebox.showwarning("Not Supported", "Audio decoding does not support " + selected_payload + " payloads")
+                return
         else:
-            messagebox.showwarning("Invalid Type", "Accepted cover : .png, .wav, .avi")
+            messagebox.showwarning("Invalid Type", "Accepted file types: .png, .wav, .avi")
+            return
     
 
     def __init__(self):
@@ -258,6 +292,8 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
                     for line in file:
                         line = line.strip()
                         element.insert("end", f"{line}\n")
+            elif event.data.endswith(('jpg', 'png')) and self.current_screen == "video_screen":
+                element.insert("end", f"{event.data}\n")
 
         # Image encode slider
         def image_slider_event(value):
@@ -400,7 +436,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         self.video_screen.grid_columnconfigure(1, weight=1)
 
         # Payload textbox
-        self.payload_label = customtkinter.CTkLabel(self.video_screen, text="Insert text file payload:", font=customtkinter.CTkFont(size=13, weight="bold"))
+        self.payload_label = customtkinter.CTkLabel(self.video_screen, text="Insert text or image payload:", font=customtkinter.CTkFont(size=13, weight="bold"))
         self.payload_label.grid(row=0, column=0, padx=15, pady=5, sticky="w")
         self.payload_textbox = tk.Text(self.video_screen, width=70, height=25) 
         self.payload_textbox.grid(row=1, column=0, columnspan=2, padx=15, pady=10, sticky="ew") 

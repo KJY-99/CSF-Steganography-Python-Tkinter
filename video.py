@@ -1,6 +1,7 @@
 import cv2, numpy as np
 from tkinter import filedialog
 from moviepy.editor import VideoFileClip, AudioFileClip
+from img import encode_img, decode_img, to_bin
 import os
 import shutil
 
@@ -39,6 +40,7 @@ def extract_audio(video_path):
     audio.close()
 
 def frame_encode(frame_list,secret,bit_length):
+    secret = "-----" + secret
     secret += "-----"
     segment_length = len(secret) // len(frame_list)
     remainder = len(secret) % len(frame_list)
@@ -47,6 +49,8 @@ def frame_encode(frame_list,secret,bit_length):
     message_segments = message_segments[1:]
     split_parts = [secret[start:end] for start, end in zip([0] + message_segments, message_segments)]
     for i in range(0,len(frame_list)):
+        print(split_parts[i])
+        print(bit_length)
         encode_message(split_parts[i],frame_list[i],frame_list[i],bit_length)
     print("Encoded video frames saved successfully.")
     
@@ -89,57 +93,11 @@ def add_audio_to_video():
 def encode_message(secret_message,image_path,output_file_path,bit_length):
     # Encode the secret message into the image
     try:
-        encoded_image = encode(image_path, secret_message,bit_length)
+        encoded_image = encode_img(image_path, secret_message,bit_length)
     except Exception as e:
         print("Error:", e)
         return
     cv2.imwrite(output_file_path, encoded_image)
-
-def to_bin(data):
-    """Convert `data` to binary format as string"""
-    if isinstance(data, str):
-        return ''.join([format(ord(i), "08b") for i in data])
-    elif isinstance(data, bytes) or isinstance(data, np.ndarray):
-        return [format(i, "08b") for i in data]
-    elif isinstance(data, int) or isinstance(data, np.uint8):
-        return format(data, "08b")
-    else:
-        raise TypeError("Type not supported.")
-
-def encode(image_name, secret_data, bit_length):
-    # Read image
-    image = cv2.imread(image_name)
-    # Height * Width * RGB (bytes)
-    n_bytes = image.shape[0] * image.shape[1] * 3 // 8
-    # Stopping criteria
-    secret_data += "====="
-    # Check image data feasibility
-    if len(secret_data) > n_bytes:
-        raise ValueError("Need larger image or less data.")
-    data_index = 0
-    # Converts text data to binary
-    binary_secret_data = to_bin(secret_data)
-    data_len = len(binary_secret_data)
-    for row in image:
-        for pixel in row:
-            # Convert pixel to binary
-            r, g, b = to_bin(pixel)
-            # Index last x elements of the pixel, append indexed secret data
-            if data_index < data_len:
-                pixel[0] = int(r[:-bit_length] + binary_secret_data[data_index:data_index + bit_length], 2)
-                data_index += bit_length
-            if data_index < data_len:
-                pixel[1] = int(g[:-bit_length] + binary_secret_data[data_index:data_index + bit_length], 2)
-                data_index += bit_length
-            if data_index < data_len:
-                pixel[2] = int(b[:-bit_length] + binary_secret_data[data_index:data_index + bit_length], 2)
-                data_index += bit_length
-            # Exit once all data is encoded
-            if data_index >= data_len:
-                break
-        if data_index >= data_len:
-            break
-    return image
 
 def frame_decode(bit_length):
     print("Start decoding")
@@ -148,32 +106,19 @@ def frame_decode(bit_length):
     frames= sorted(frames, key=lambda x: int(x.split('.')[0]))
     frames= [os.path.join("frameholder", f) for f in frames]
     for f in frames:
-        message += decode(f,bit_length)
-        if message[-5:] == "-----":
+        try:
+            message += decode_img(f,bit_length)
+        except Exception as e:
+            raise ValueError(e)
+        if len(message) >= 5  and message[:5] != "-----":
+                print("stopped")
+                raise ValueError("Error Decoding")
+        if len(message) >= 10  and message[-5:] == "-----":
             print("Secret message retrieved.")
+            message = message[5:]
             return message[:-5]
     return message
 
-def decode(image_name, bit_length):
-    # Read image
-    image = cv2.imread(image_name)
-    if image is None:
-        raise ValueError("Image not found.")
-    binary_data = ""
-    decoded_data = ""
-    for row in image:
-        for pixel in row:
-            if len(binary_data) >= 8:
-                decoded_data += chr (int(binary_data[0:8], 2))
-                binary_data = binary_data[8:]
-            if decoded_data[-5:] == "=====":
-                return decoded_data[:-5]
-            r, g, b = to_bin(pixel)
-            # Index last x elements (Bit length)
-            binary_data += r[-bit_length:]
-            binary_data += g[-bit_length:]
-            binary_data += b[-bit_length:]
-    return decoded_data
 
 def cleandir():
         # If it exists, delete it
@@ -219,14 +164,16 @@ def binary_to_image(binary_data):
     if image is None:
         raise ValueError("Image decoding failed")
     return image
-# video_path = "noaudio.avi"
+# video_path = "video.avi"
 # encoded_video_path ="output_video.avi"
 # bit_length = 2
 # input_image_path = "test.png"
-# secret = image_to_binary(input_image_path)
+# #secret = image_to_binary(input_image_path)
+# secret = "test"
 # output_image_path = "hidden.png"
 
 # video_encryption(video_path,secret,bit_length)
 # secret_encoded =video_decryption(encoded_video_path,bit_length)
-# binary_to_image(secret_encoded)
+# print(secret_encoded)
+# #binary_to_image(secret_encoded)
 # cleandir()
