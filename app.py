@@ -187,34 +187,19 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
             messagebox.showerror("Error", " No text file added.")
             return
         
-        num_lsb = self.audio_bit_data  # Ensure bit_length is an integer 
+        num_lsb = int(self.audio_bit_slider.get())  # Ensure bit_length is an integer 
         try:  
             encode_wav(cover_file, self.payload_audio_textbox.get(1.0, "end-1c"), num_lsb)  
             messagebox.showinfo("Success", "Text encoded successfully into audio.")  
         except Exception as e:  
             messagebox.showerror("Error", f"Failed to encode text: {e}")  
 
-    def decode_file(self):
-        stego_file = self.decode_listb.get(tk.ACTIVE)
-
-        if not stego_file:
-            messagebox.showerror("Error", "Please select the encoded .wav file")
-            return
-        num_lsb = self.audio_bit_data
-            
-        try:
-            text = decode_wav(stego_file, num_lsb)
-            messagebox.showinfo("Decoded Text", text)
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to decode text: {e}")
-
-
     def usedecodefunction(self):
         # delete previous displays
         self.decode_output_label.configure(text="",image="")
         
         # Retrieve the selected bit value
-        bit_value = self.decode_bit_data
+        bit_value = int(self.decode_bit_slider.get())
 
         # Retrieve the value from the combobox
         selected_payload = self.decode_combobox.get()
@@ -293,10 +278,6 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
         # Define TkDnD ver.
         self.TkdndVersion = TkinterDnD._require(self)
-        self.bit_data = 1
-        self.audio_bit_data = 1
-        self.video_bit_data = 1
-        self.decode_bit_data = 1
         self.current_screen = "image_screen"
         
         # Drag and Drop Method - Listbox: Get filepath to listbox (IMPT: Omit spaces in file path)
@@ -321,20 +302,16 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         # Image encode slider
         def image_slider_event(value):
             self.slider_label.configure(text="Selected number of bits: "+str(int(value)))
-            self.bit_data = int(value)
 
         def video_slider_event(value):
             self.video_slider_label.configure(text="Selected number of bits: "+str(int(value)))
-            self.video_bit_data = int(value)
 
         def audio_slider_event(value):
             self.audio_slider_label.configure(text="Selected number of bits: "+str(int(value)))
-            self.audio_bit_data = int(value)
 
         # Decode slider
         def decode_slider_event(value):
             self.decode_slider_label.configure(text="Selected number of bits for decoding: "+str(int(value)))
-            self.decode_bit_data = int(value)
 
         # Function to display image in label
         def display_input_image(file_path):
