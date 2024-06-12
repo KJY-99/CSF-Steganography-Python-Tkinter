@@ -49,8 +49,6 @@ def frame_encode(frame_list,secret,bit_length):
     message_segments = message_segments[1:]
     split_parts = [secret[start:end] for start, end in zip([0] + message_segments, message_segments)]
     for i in range(0,len(frame_list)):
-        print(split_parts[i])
-        print(bit_length)
         encode_message(split_parts[i],frame_list[i],frame_list[i],bit_length)
     print("Encoded video frames saved successfully.")
     
@@ -111,8 +109,7 @@ def frame_decode(bit_length):
         except Exception as e:
             raise ValueError(e)
         if len(message) >= 5  and message[:5] != "-----":
-                print("stopped")
-                raise ValueError("Error Decoding")
+            raise ValueError("Error Decoding")
         if len(message) >= 10  and message[-5:] == "-----":
             print("Secret message retrieved.")
             message = message[5:]
@@ -164,6 +161,7 @@ def binary_to_image(binary_data):
     if image is None:
         raise ValueError("Image decoding failed")
     return image
+
 # video_path = "video.avi"
 # encoded_video_path ="output_video.avi"
 # bit_length = 2

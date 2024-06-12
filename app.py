@@ -15,19 +15,26 @@ from pygame import mixer
 class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
 
     def image_encode_and_display(self):
+        text = self.tbox.get("1.0", "end").strip()
         if not self.listb:
             messagebox.showerror("Error", "No image file added.")
             return
-        if not self.tbox.get(1.0, "end-1c"):  # Check if textbox_data is empty or contains only whitespace
-            messagebox.showerror("Error", " No text file added.")
+        if not text:  # Check if textbox_data is empty or contains only whitespace
+            messagebox.showerror("Error", " No payload file added.")
             return
         if not self.listb.get(tk.ACTIVE).endswith(('jpg', 'png')):
             messagebox.showerror("Error", "Please insert a png or jpg image file.")
             return
+        if text.endswith(('jpg', 'png')):
+            try:
+                text = image_to_binary(text)
+            except Exception as e:  
+                messagebox.showerror("Error", f"Failed to encode image, please ensure proper filepath")
+                return
+        bit_length = int(self.bit_slider.get())  # Ensure bit_length is an integer 
         try:
             # Call the encode function with the appropriate arguments
-            encoded_image = encode_img(self.listb.get(tk.ACTIVE), self.tbox.get(1.0, "end-1c"), self.bit_data)
-
+            encoded_image = encode_img(self.listb.get(tk.ACTIVE), text, bit_length)
             # Convert the encoded image to a format Tkinter can display
             resized_encoded_image = image_resize(encoded_image, height=400)
             resized_encoded_image_pil = Image.fromarray(cv2.cvtColor(resized_encoded_image, cv2.COLOR_BGR2RGB))
@@ -40,10 +47,10 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
             self.output_image_label_text.configure(text='Encoded Image')
             self.output_image_label.configure(image=resized_encoded_image_tk)
             self.output_image_label.image = resized_encoded_image_tk  # Keep a reference to avoid garbage collection
-            print("Encoding successful")
+            messagebox.showinfo("Success", "Payload encoded successfully into image.")  
 
         except Exception as e:
-            print(f"An error occurred: {e}")
+            messagebox.showerror("Error",f"An error occurred: {e}")
 
     def encode_video(self):  
         video_file = self.video_file_listb.get(tk.ACTIVE)
@@ -214,13 +221,29 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         # Retrieve the filepath within the listbox
         decode_filepath = self.decode_listb.get(tk.ACTIVE)
         if decode_filepath.endswith(('jpg', 'png')):
+            try:
+                decode_data = decode_img(decode_filepath, bit_value)
+            except Exception as e:
+                messagebox.showerror("Error", f"{e}")
+                return
+
             if selected_payload == "Text":
+                if decode_data[1:4] == "PNG":
+                    messagebox.showerror("Error", "Image file has been encoded, please change type of payload")
+                    return
+                self.decode_output_label.configure(text=decode_data)
+
+            elif selected_payload == "Image":
                 try:
-                    decode_data = decode_img(decode_filepath, bit_value)
+                    decode_image  = binary_to_image(decode_data)
                 except Exception as e:
                     messagebox.showerror("Error", f"{e}")
                     return
-                self.decode_output_label.configure(text=decode_data)
+                resized_decoded_image = image_resize(decode_image, height=400)
+                resized_decoded_image_pil = Image.fromarray(cv2.cvtColor(resized_decoded_image, cv2.COLOR_BGR2RGB))
+                resized_decoded_image_tk = ImageTk.PhotoImage(resized_decoded_image_pil)
+                self.decode_output_label.configure(image=resized_decoded_image_tk)
+                cv2.imwrite("image_output.png", decode_image)
             else:
                 messagebox.showwarning("Not Supported", "Image decoding does not support " + selected_payload + " payloads")
         elif decode_filepath.endswith('avi'):
@@ -292,7 +315,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
                     for line in file:
                         line = line.strip()
                         element.insert("end", f"{line}\n")
-            elif event.data.endswith(('jpg', 'png')) and self.current_screen == "video_screen":
+            elif event.data.endswith(('jpg', 'png')) and (self.current_screen == "video_screen" or self.current_screen == "image_screen"):
                 element.insert("end", f"{event.data}\n")
 
         # Image encode slider

@@ -1,5 +1,4 @@
 import cv2, numpy as np
-
 # Image resize function (Keep aspect ratio)
 def image_resize(image, width = None, height = None, inter = cv2.INTER_AREA):
     dim = None
@@ -72,15 +71,15 @@ def decode_img(image_name, bit_length):
     decoded_data = ""
     for row in image:
         for pixel in row:
-            if len(binary_data) >= 8:
+            while len(binary_data) >= 8:
                 decoded_data += chr (int(binary_data[0:8], 2))
                 binary_data = binary_data[8:]
-            if len(decoded_data) >= 5  and decoded_data[:5] != "=====":
-                print("stopped")
-                raise ValueError("Wrong Bit")
-            if len(decoded_data) >= 10  and decoded_data[-5:] == "=====":
-                decoded_data = decoded_data[5:]
-                return decoded_data[:-5]
+                if len(decoded_data) >= 5  and decoded_data[:5] != "=====":
+                    print("stopped")
+                    raise ValueError("Wrong Bit")
+                if len(decoded_data) >= 10  and decoded_data[-5:] == "=====":
+                    decoded_data = decoded_data[5:]
+                    return decoded_data[:-5]
             r, g, b = to_bin(pixel)
             # Index last x elements (Bit length)
             binary_data += r[-bit_length:]
@@ -91,11 +90,13 @@ def decode_img(image_name, bit_length):
 
 # input_image = "test.png"  #png file path
 # output_image = "output.png"
-# secret_data = "test" #text file path
+# secret_data = image_to_binary("test2.png") #text file path
 # # encode the data into the image
 # encoded_image = encode_img(image_name=input_image, secret_data=secret_data, bit_length=5)
 # # save the output image (encoded image)
 # cv2.imwrite(output_image, encoded_image)
 # # decode the secret data from the image
 # decoded_data = decode_img(output_image, 5)
-# print("Decoded data:", decoded_data)
+# image = binary_to_image(decoded_data)
+# cv2.imwrite("final.png",image)
+# # print("Decoded data:", decoded_data)
