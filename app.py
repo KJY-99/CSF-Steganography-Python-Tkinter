@@ -8,7 +8,7 @@ from img import image_resize, encode_img, decode_img
 from video import video_encryption,video_decryption,image_to_binary,binary_to_image
 from audio_steganography import encode_wav, decode_wav
 import vlc, threading
-import wave, pydub, pygame
+import pygame
 from pygame import mixer
 
 # Allow for TkDnD to utilise CTK
@@ -547,7 +547,7 @@ class App(customtkinter.CTk, TkinterDnD.DnDWrapper):
         # Dropdown box
         self.decode_text_label = customtkinter.CTkLabel(self.decode_screen, text="Select file payload used in encoding process:", font=customtkinter.CTkFont(size=13, weight="bold"))
         self.decode_text_label.grid(row=2, column=0, padx=15, pady=5, sticky="w")
-        self.decode_combobox = customtkinter.CTkComboBox(self.decode_screen,state="readonly", values=['Text', 'Image', 'Audio'], width=300, height=25)
+        self.decode_combobox = customtkinter.CTkComboBox(self.decode_screen,state="readonly", values=['Text', 'Image'], width=300, height=25)
         self.decode_combobox.set('Text')
         self.decode_combobox.grid(row=3, column=0, padx=15, pady=10, sticky="ew")
         self.selected_payload = self.decode_combobox.get()
