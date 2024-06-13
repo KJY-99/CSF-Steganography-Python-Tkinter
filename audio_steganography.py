@@ -29,7 +29,8 @@ def encode_wav(file_path, text, num_lsb=1, output_file='encoded.wav'):
     with wave.open(wav_path, 'rb') as audio:
         params = audio.getparams()
         frames = audio.readframes(audio.getnframes())
-
+    text = "=====" + text
+    text += "====="
     audio_data = np.frombuffer(frames, dtype=np.uint8)
     writable_audio_data = np.copy(audio_data)
     text_bits = text_to_bits(text)
@@ -55,4 +56,12 @@ def decode_wav(file_path, num_lsb=1):
     audio_data = np.frombuffer(frames, dtype=np.uint8)
     bits = ''.join(bin(byte & ((1 << num_lsb) - 1))[2:].zfill(num_lsb) for byte in audio_data)
 
-    return bits_to_text(bits)
+    decoded_text = bits_to_text(bits)
+    if "=====" in decoded_text:
+        start_index = decoded_text.index("=====") + 5
+        end_index = decoded_text.rindex("=====")
+        decoded_text = decoded_text[start_index:end_index]
+        return decoded_text
+    else:
+        raise ValueError("Wrong bit")
+  
